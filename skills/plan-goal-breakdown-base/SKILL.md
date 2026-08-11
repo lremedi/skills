@@ -8,6 +8,7 @@ metadata:
   abstract: true
   role: base
   inherited-by: "plan-goal-breakdown, plan-goal-breakdown-agility, plan-goal-breakdown-codebase-memory, plan-goal-breakdown-agility-codebase-memory"
+  references: "../pr-description/SKILL.md"
 ---
 
 # Plan Goal Breakdown — Base
@@ -138,6 +139,29 @@ vendor/integration branch, a branch someone else created). Branch naming is ther
    name change the asset ID used for folders, filenames, or commit prefixes — those come from the
    asset ID alone and are unaffected by a non-conforming branch.
 
+## PR Description Requirement (Required)
+
+Before materializing the final goal file — the highest-numbered goal in the ordered sequence — read
+`../pr-description/SKILL.md`, resolved relative to this file's directory. It defines the exact
+structure and evidence rules for a PR description; this base only decides *when* and *which* goal
+produces one, not what it should contain.
+
+- The **last goal in the ordered sequence, and only that goal**, gets an added deliverable: finalize
+  `pr-description.md` in the same subfolder, following `../pr-description/SKILL.md`'s required
+  structure, once every other goal in the set has a terminal (✅ done or ❌ blocked) shared-log entry.
+- Add this as the final step of that goal's own PLAN, and as an added binary criterion in its DONE
+  WHEN: `pr-description.md` exists, follows the required structure, and its "What changed" / "How to
+  verify" content is drawn from the shared log's actual entries — not restated from this one goal's
+  PLAN in isolation.
+- Add a corresponding VERIFY check to that goal: confirm every other goal's shared-log entry is
+  terminal before treating `pr-description.md` as complete. A PR description written while sibling
+  goals are still pending is incomplete by construction, not a draft to refine later.
+- This does not change the Goal Template's structure. The added deliverable lives inside that one
+  goal's own PLAN/DONE WHEN/VERIFY content, the same way any other task-specific detail does — no new
+  template section is introduced.
+- At materialization time, the description can only be scaffolded, not finished — no other goal has
+  executed yet. Create the stub in step 6 below; the last goal finishes it later, at execution time.
+
 ## Procedure
 
 1. Discover context.
@@ -223,6 +247,13 @@ Dependency metadata default format:
   # Execution Log: <asset-id>-<feature-slug>
 
   <!-- Each goal appends one entry here on completion or block. -->
+  ```
+- Create `pr-description.md` stub in the same subfolder (skip if it already exists):
+  ```markdown
+  # PR Description — <asset-id>-<feature-slug>
+
+  <!-- Finalized by the last goal in this set, once every other goal's shared-log entry is terminal.
+       Structure and evidence rules: ../pr-description/SKILL.md -->
   ```
 
 7. Validate quality.
@@ -331,6 +362,9 @@ A valid output must satisfy all:
   `D-#####` asset ID.
 - Folder contains one index, one log stub, plus one file per goal.
 - Every goal includes a `📝 LOG:` section with the shared log file path and required entry format.
+- The last goal in the ordered sequence includes, in its own PLAN/DONE WHEN/VERIFY, the requirement to
+  finalize `pr-description.md` per `../pr-description/SKILL.md`, gated on every other goal's
+  shared-log entry being terminal.
 
 ## Output Contract
 
@@ -347,6 +381,12 @@ Default artifact structure:
   - `.goals/D-#####-<feature-slug>/01-D-#####-*.md`
   - `.goals/D-#####-<feature-slug>/02-D-#####-*.md`
 - Continue the same sequence pattern for each additional goal file.
+
+Every variant additionally produces:
+
+- `.goals/<asset-id>-<feature-slug>/pr-description.md` — stub created at planning time (step 6),
+  finalized by the last goal at execution time per the PR Description Requirement above and
+  `../pr-description/SKILL.md`.
 
 Children that produce extra artifacts declare them in their own Output Contract section, additive to
 this list.
@@ -378,4 +418,6 @@ The Quality Bar is authoritative; this checklist is the final operator pass befo
 - [ ] `00-S-#####-index.md` or `00-D-#####-index.md` created with dependency order.
 - [ ] `log.<asset-id>-<feature-slug>.md` stub created in the goals folder.
 - [ ] Each goal includes a `📝 LOG:` section with the correct shared log file path.
+- [ ] `pr-description.md` stub created in the goals folder; the last goal's file includes the
+  requirement to finalize it once every other goal's shared-log entry is terminal.
 - [ ] User receives concise summary and next-step options.
