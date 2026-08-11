@@ -157,9 +157,12 @@ artifacts get skill names or repo-root-relative paths, never paths relative to a
 
 - The **last goal in the ordered sequence, and only that goal**, gets an added deliverable: finalize
   `pr-description.md` in the same subfolder, following the required structure defined by the
-  `pr-description` skill, once every other goal in the set has a terminal (✅ done or ❌ blocked)
-  shared-log entry. Write that reference into the goal as the skill name — the goal file must not
-  carry a skills-relative path.
+  `pr-description` skill, once every other goal in the set has a **terminal** shared-log entry —
+  `✅ done`, `⚠️ partial`, or `❌ blocked`. All three end a goal's run and all three satisfy this gate;
+  the `pr-description` skill already requires disclosing any partial or blocked goal in its Summary and
+  Risk/rollback sections, so a partial sibling is something to describe honestly, not something to wait
+  on forever. Write that reference into the goal as the skill name — the goal file must not carry a
+  skills-relative path.
 - Add this as the final step of that goal's own PLAN, and as an added binary criterion in its DONE
   WHEN: `pr-description.md` exists, follows the required structure, and its "What changed" / "How to
   verify" content is drawn from the shared log's actual entries — not restated from this one goal's

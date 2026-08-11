@@ -127,6 +127,12 @@ work. GOAL, CONTEXT, CONSTRAINTS, PRIORITY, PLAN, DONE WHEN, VERIFY, COMMIT, SAF
 DEPENDENCIES together are the full authorization to act. There is nothing left to confirm before
 starting an eligible goal, so don't.
 
+**Terminal** means a goal's most recent shared-log entry is `✅ done`, `⚠️ partial`, or `❌ blocked`.
+Those are the only three outcomes the log can record, they are the only three that end a goal's run, and
+all three satisfy a gate that waits on "every other goal terminal" — `⚠️ partial` included. A partial
+outcome still names its shortfall in the final report, and a gate that consumes it discloses it rather
+than hiding it.
+
 - **Act immediately on invocation.** When you're handed a goal, an index, or an asset ID with a goal
   set behind it, start the Procedure below — don't summarize the goal back and wait for a go-ahead,
   and don't ask whether to proceed with a plan the goal file already states as decided.
@@ -137,19 +143,20 @@ starting an eligible goal, so don't.
   standing instruction to commit once VERIFY passes — running VERIFY commands and committing on that
   basis doesn't need a separate go-ahead. Re-litigating a decision the goal file already made just
   adds a stop the goal set wasn't designed to have.
-- **A run ends in exactly one of two states, per goal:** ✅ done (DONE WHEN met, VERIFY passed, commit
-  landed, log entry written) or ❌ locked — SAFETY NET's stated attempt budget exhausted, or a
-  dependency that's itself locked, with no path forward that doesn't require a human decision. Reach
-  one of those for every eligible goal before stopping; don't stop partway through an eligible goal
-  because progress feels uncertain — that's what the attempt budget is for.
+- **A run ends in exactly one terminal state, per goal:** `✅ done` (DONE WHEN met, VERIFY passed, commit
+  landed, log entry written), `⚠️ partial` (part of it demonstrably landed and the rest didn't), or
+  `❌ blocked` (SAFETY NET's stated attempt budget exhausted, or a dependency that is itself blocked,
+  with no path forward that doesn't require a human decision). Reach one of those for every eligible
+  goal before stopping; don't stop partway through an eligible goal because progress feels uncertain —
+  that's what the attempt budget is for.
 - **Only three things legitimately interrupt a run:** a protected/ambiguous working-branch situation
   the goal set didn't anticipate (see the base Working Branch Requirement inherited by
   `plan-goal-breakdown`), a SAFETY NET section explicitly naming something only a human can decide
   (a credential, a product/UX call, a missing fixture), or an environment/tool failure that makes
-  further progress on that specific goal impossible. Even then, only the affected goal locks — every
-  other still-eligible, independent goal keeps running. A single locked goal is not a reason to stop
-  the whole session and ask what to do next; report it and continue with what's still runnable, then
-  give the full picture in the final report once truly nothing eligible remains.
+  further progress on that specific goal impossible. Even then, only the affected goal is blocked —
+  every other still-eligible, independent goal keeps running. A single blocked goal is not a reason to
+  stop the whole session and ask what to do next; report it and continue with what's still runnable,
+  then give the full picture in the final report once truly nothing eligible remains.
 
 ## PR Description Handoff (Required)
 
@@ -230,8 +237,8 @@ Resolving it is this skill's job, not the goal file's:
    Mark them skipped-due-to-blocked-dependency in your own summary. Keep going on any goal that's
    independent of the block; a block shouldn't stall unrelated work that was already clear to proceed.
 
-7. **Wrap up.** Stop only when every goal has reached ✅ done, ❌ locked, or skipped-due-to-a-locked-
-   dependency — not before. Report per goal — outcome, commit hash if any, one line on why if locked
+7. **Wrap up.** Stop only when every goal has reached a terminal outcome or is skipped-due-to-a-blocked-
+   dependency — not before. Report per goal — outcome, commit hash if any, one line on why if blocked
    or skipped — and point to the shared log as the full record rather than re-pasting it.
 
 ## Decision Rules
@@ -240,17 +247,17 @@ Resolving it is this skill's job, not the goal file's:
   through on a stale assumption.
 - If a constraint and a plan step conflict, resolve it via SAFETY NET, not by silently picking one.
 - If a tool a goal names is unavailable, say so and stop rather than approximating its result.
-- If a goal locks, cascade the skip to its dependents only, and keep executing every other eligible,
-  independent goal — a single locked goal is never a reason to end the run early.
-- Do not pause the run to ask whether to continue after a goal finishes or locks; only the three
-  situations in the Autonomy Contract warrant stopping short of the full run order.
+- If a goal is blocked, cascade the skip to its dependents only, and keep executing every other
+  eligible, independent goal — a single blocked goal is never a reason to end the run early.
+- Do not pause the run to ask whether to continue after a goal reaches a terminal outcome; only the
+  three situations in the Autonomy Contract warrant stopping short of the full run order.
 
 ## Quality Bar
 
 A valid execution run must satisfy all:
 
 - Every goal actually eligible to run (dependencies satisfied, not already ✅ done) reached a terminal
-  outcome — done or locked — without a mid-run pause to ask whether to continue.
+  outcome — done, partial, or blocked — without a mid-run pause to ask whether to continue.
 - Every VERIFY command was actually run, with real output read, not inferred.
 - Every completed goal's commit used exactly its COMMIT section's message, with a recorded hash.
 - Every attempted goal — done, partial, or blocked — has exactly one new LOG entry in the shared log
@@ -291,7 +298,7 @@ The Quality Bar is authoritative; this checklist is the final operator pass befo
   directory first, and wrote the file from shared-log evidence.
 - [ ] Blocked goals stopped their dependents; independent goals still ran.
 - [ ] Parallel-safe goals ran concurrently where possible.
-- [ ] No mid-run pause asked whether to continue after a goal finished or locked — the run continued
-  on its own until every eligible goal reached done or locked.
+- [ ] No mid-run pause asked whether to continue after a goal reached a terminal outcome — the run
+  continued on its own until every eligible goal was terminal.
 - [ ] Final report given per goal (outcome, commit hash, blocked/skipped reason), pointing to the
   shared log rather than re-pasting it.
