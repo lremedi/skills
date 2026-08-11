@@ -14,6 +14,7 @@ metadata:
   abstract: true
   role: base
   inherited-by: "execute-goals, execute-goals-agility, execute-goals-codebase-memory, execute-goals-agility-codebase-memory"
+  references: "../pr-description/SKILL.md"
 ---
 
 # Execute Goals — Base
@@ -93,6 +94,9 @@ exactly as written:
 - **`NN-<id>-<slug>.md`** — one goal per file: 🎯 GOAL, 🧠 CONTEXT, 📏 CONSTRAINTS, 📊 PRIORITY,
   🗺️ PLAN, 🛑 DONE WHEN, 🔍 VERIFY, ✅ COMMIT, 🛡️ SAFETY NET, 📝 LOG, 🔗 DEPENDENCIES.
 - **`log.<id>.md`** — the shared file every goal appends one entry to on completion or block.
+- **`pr-description.md`** — a planning-time stub. The one exception to "read-only input": the last goal
+  in the sequence finalizes this file as part of its own PLAN/DONE WHEN/VERIFY (see PR Description
+  Handoff below). No other goal touches it.
 
 Treat the labels, not the emoji, as the contract — a plain-text variant means the same thing. What each
 section obligates you to do:
@@ -147,6 +151,30 @@ starting an eligible goal, so don't.
   the whole session and ask what to do next; report it and continue with what's still runnable, then
   give the full picture in the final report once truly nothing eligible remains.
 
+## PR Description Handoff (Required)
+
+The last goal in a goal set produced by the `plan-goal-breakdown` family carries one extra deliverable:
+finalize `pr-description.md` in the goals folder. That goal names the **`pr-description` skill** as the
+authority on structure and evidence rules — it does not, and must not, carry a path to that skill,
+because a path written from inside `.goals/` can't reach the skills folder.
+
+Resolving it is this skill's job, not the goal file's:
+
+- When an eligible goal's PLAN/DONE WHEN/VERIFY calls for producing or finalizing `pr-description.md`,
+  read `../pr-description/SKILL.md` — resolved relative to **this file's directory**, inside the skills
+  folder — before writing anything into that file. Follow its Required Structure, Gathering Evidence
+  rules, and Output Contract.
+- Read it at that point, not up front: it's needed by exactly one goal in the set, so it stays out of
+  the eager `parent-files` load every run pays for.
+- A goal file that does carry a literal `../pr-description/SKILL.md` (or any other skills-relative
+  path) is a planning defect from an older run. Don't try to resolve the path from the goals folder and
+  don't treat its failure as a blocker — resolve the skill from this file's directory as above, note the
+  stale reference in the run summary, and continue.
+- If `../pr-description/SKILL.md` genuinely isn't readable from this skill's directory, that's a real
+  tool/environment failure for that one goal: say so plainly, leave the stub as-is rather than
+  improvising a structure, and treat the goal per the normal SAFETY NET path. Never fabricate the
+  skill's required structure from memory of what a PR description usually looks like.
+
 ## Procedure
 
 1. **Locate the goal set and confirm the branch.**
@@ -180,6 +208,9 @@ starting an eligible goal, so don't.
    - If verification fails, go to SAFETY NET. Use exactly the attempt budget and inspection order it
      states, no more. Exhausting it means the goal is ❌ blocked (or ⚠️ partial if some of it
      demonstrably landed) — not something to keep improvising against.
+   - If a step of this goal calls for producing or finalizing `pr-description.md`, load the
+     `pr-description` skill first per PR Description Handoff above, and write the file from the shared
+     log's actual entries rather than from this goal's own PLAN.
    - Only commit after verification fully passes, using the COMMIT section's command exactly as
      written.
    - Whatever happened, append the LOG entry in the exact format given, to the exact file named,
@@ -226,6 +257,9 @@ A valid execution run must satisfy all:
   file the goal names.
 - No goal ran outside its CONSTRAINTS.
 - No downstream goal ran on top of an unresolved ❌ blocked dependency.
+- Any goal that finalized `pr-description.md` did so with the `pr-description` skill actually loaded
+  from this skill's own directory — not from a path resolved inside `.goals/`, and not from memory of
+  the expected structure.
 - Parallel-safe goals were run concurrently where the environment supports it.
 
 ## Output Contract
@@ -233,6 +267,9 @@ A valid execution run must satisfy all:
 Base artifacts touched or produced during execution:
 
 - `log.<asset-id>-<feature-slug>.md` — gains one entry per attempted goal.
+- `pr-description.md` — the planning-time stub is replaced with the finished description, but only by
+  the last goal in the set and only when that goal's own sections call for it, per the `pr-description`
+  skill's Output Contract.
 - Working-tree changes and commits, scoped exactly to each goal's CONSTRAINTS and COMMIT message.
 
 This skill does not create or restructure goal files, the index, or `.goals/` folder layout — that
@@ -250,6 +287,8 @@ The Quality Bar is authoritative; this checklist is the final operator pass befo
 - [ ] Every eligible goal executed section-by-section: context confirmed, constraints respected, every
   VERIFY command actually run, commit run verbatim only after verification passed.
 - [ ] Every attempted goal has exactly one new shared-log entry, in the exact required format.
+- [ ] Any goal calling for `pr-description.md` loaded `../pr-description/SKILL.md` from this skill's
+  directory first, and wrote the file from shared-log evidence.
 - [ ] Blocked goals stopped their dependents; independent goals still ran.
 - [ ] Parallel-safe goals ran concurrently where possible.
 - [ ] No mid-run pause asked whether to continue after a goal finished or locked — the run continued

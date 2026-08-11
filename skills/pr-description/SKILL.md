@@ -23,6 +23,11 @@ Two ways this gets used: someone asks for it directly against a branch or diff, 
 way, the job is the same — turn a set of real commits into a description a reviewer can act on without
 re-deriving the diff themselves.
 
+Goal files reach this skill **by name**, never by path: a `.goals/` folder can't resolve a path relative
+to the skills directory. The `execute-goals` family loads this file from its own location when a goal
+calls for `pr-description.md` (see its "PR Description Handoff"). If you're editing a goal template or
+stub, keep the reference as the skill name.
+
 ## Inputs To Collect
 
 1. What to describe: a branch name / commit range, or a `.goals/<asset-id>-<feature-slug>/` folder.

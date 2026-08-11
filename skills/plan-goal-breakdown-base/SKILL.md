@@ -146,9 +146,20 @@ Before materializing the final goal file — the highest-numbered goal in the or
 structure and evidence rules for a PR description; this base only decides *when* and *which* goal
 produces one, not what it should contain.
 
+**Reference it by skill name inside goal artifacts, never by that path.** `../pr-description/SKILL.md`
+is resolvable only from this file's own directory, inside the skills folder. Anything written into
+`.goals/<asset-id>-<feature-slug>/` — a goal file, the index, the `pr-description.md` stub — is read
+from the goals folder at execution time, where the same string resolves to
+`.goals/pr-description/SKILL.md` and does not exist. In goal artifacts, name the **`pr-description`
+skill**; the executing skill resolves it from its own location (see the execute-goals family's
+"PR Description Handoff"). This applies to every skills-relative path, not just this one: goal
+artifacts get skill names or repo-root-relative paths, never paths relative to a skill directory.
+
 - The **last goal in the ordered sequence, and only that goal**, gets an added deliverable: finalize
-  `pr-description.md` in the same subfolder, following `../pr-description/SKILL.md`'s required
-  structure, once every other goal in the set has a terminal (✅ done or ❌ blocked) shared-log entry.
+  `pr-description.md` in the same subfolder, following the required structure defined by the
+  `pr-description` skill, once every other goal in the set has a terminal (✅ done or ❌ blocked)
+  shared-log entry. Write that reference into the goal as the skill name — the goal file must not
+  carry a skills-relative path.
 - Add this as the final step of that goal's own PLAN, and as an added binary criterion in its DONE
   WHEN: `pr-description.md` exists, follows the required structure, and its "What changed" / "How to
   verify" content is drawn from the shared log's actual entries — not restated from this one goal's
@@ -253,7 +264,7 @@ Dependency metadata default format:
   # PR Description — <asset-id>-<feature-slug>
 
   <!-- Finalized by the last goal in this set, once every other goal's shared-log entry is terminal.
-       Structure and evidence rules: ../pr-description/SKILL.md -->
+       Structure and evidence rules: the `pr-description` skill. -->
   ```
 
 7. Validate quality.
@@ -363,8 +374,11 @@ A valid output must satisfy all:
 - Folder contains one index, one log stub, plus one file per goal.
 - Every goal includes a `📝 LOG:` section with the shared log file path and required entry format.
 - The last goal in the ordered sequence includes, in its own PLAN/DONE WHEN/VERIFY, the requirement to
-  finalize `pr-description.md` per `../pr-description/SKILL.md`, gated on every other goal's
-  shared-log entry being terminal.
+  finalize `pr-description.md` per the `pr-description` skill, gated on every other goal's shared-log
+  entry being terminal.
+- No goal artifact (goal file, index, log, or `pr-description.md` stub) contains a skills-relative
+  path such as `../pr-description/SKILL.md` — those resolve only from inside the skills folder, not
+  from `.goals/`. Skill references in artifacts are by skill name.
 
 ## Output Contract
 
@@ -385,8 +399,9 @@ Default artifact structure:
 Every variant additionally produces:
 
 - `.goals/<asset-id>-<feature-slug>/pr-description.md` — stub created at planning time (step 6),
-  finalized by the last goal at execution time per the PR Description Requirement above and
-  `../pr-description/SKILL.md`.
+  finalized by the last goal at execution time per the PR Description Requirement above and the
+  `pr-description` skill (this file may cite it as `../pr-description/SKILL.md`; the stub and goal
+  files may not).
 
 Children that produce extra artifacts declare them in their own Output Contract section, additive to
 this list.
@@ -419,5 +434,6 @@ The Quality Bar is authoritative; this checklist is the final operator pass befo
 - [ ] `log.<asset-id>-<feature-slug>.md` stub created in the goals folder.
 - [ ] Each goal includes a `📝 LOG:` section with the correct shared log file path.
 - [ ] `pr-description.md` stub created in the goals folder; the last goal's file includes the
-  requirement to finalize it once every other goal's shared-log entry is terminal.
+  requirement to finalize it once every other goal's shared-log entry is terminal, referencing the
+  `pr-description` skill by name rather than by a skills-relative path.
 - [ ] User receives concise summary and next-step options.
