@@ -150,8 +150,11 @@ than hiding it.
   goal before stopping; don't stop partway through an eligible goal because progress feels uncertain —
   that's what the attempt budget is for.
 - **Only three things legitimately interrupt a run:** a protected/ambiguous working-branch situation
-  the goal set didn't anticipate (see the base Working Branch Requirement inherited by
-  `plan-goal-breakdown`), a SAFETY NET section explicitly naming something only a human can decide
+  the goal set didn't anticipate — two rules govern this, and they are the whole of it: **a protected
+  trunk means halt** (`main`, `master`, `trunk`, `default`, `develop`, `development`, `dev`, `release`,
+  `release/*`, `hotfix/*`, `support/*`, case-insensitively, plus anything the user or repo config calls
+  protected), and **never rename a branch yourself** — a SAFETY NET section explicitly naming something
+  only a human can decide
   (a credential, a product/UX call, a missing fixture), or an environment/tool failure that makes
   further progress on that specific goal impossible. Even then, only the affected goal is blocked —
   every other still-eligible, independent goal keeps running. A single blocked goal is not a reason to
@@ -188,8 +191,11 @@ Resolving it is this skill's job, not the goal file's:
    - Find `00-<id>-index.md` first — don't jump straight to a numbered goal file. It carries the
      working branch, dependency graph, and parallelization notes that a single goal file doesn't
      repeat.
-   - Confirm you're on the branch the index names, or switch/create it, before making any change. A
-     goal executed on the wrong branch is a goal you'll have to redo.
+   - Confirm you're on the branch the index names before making any change; switch to it if it already
+     exists. A goal executed on the wrong branch is a goal you'll have to redo.
+   - Never create a branch and carry on, and never proceed onto a protected trunk. If the index names no
+     branch, names one that doesn't exist, or points at a protected trunk, that's the branch interrupt in
+     the Autonomy Contract — halt and ask.
 
 2. **Read the shared log and determine what still needs to run.**
    - Match log entries to goals by slug (the goal file's filename without the number, e.g.

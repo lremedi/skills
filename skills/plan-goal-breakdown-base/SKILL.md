@@ -134,7 +134,7 @@ vendor/integration branch, a branch someone else created). Branch naming is ther
      to proceed here or switch. Accept "proceed" and continue with the name unchanged — a
      non-conforming name is not a defect.
 
-4. Record the **actual** branch name in each goal's branch metadata. Never synthesize an idealized
+4. Record the **actual** branch name in the index and in each goal's `Branch:` slot. Never synthesize an idealized
    `<asset-id>-<feature-slug>` value that does not match the real branch, and never let the branch
    name change the asset ID used for folders, filenames, or commit prefixes — those come from the
    asset ID alone and are unaffected by a non-conforming branch.
@@ -253,6 +253,8 @@ Dependency metadata default format:
 6. Create plan index.
 
 - Add `00-S-#####-index.md` or `00-D-#####-index.md` with:
+  - the confirmed working branch, recorded exactly as the branch is actually named (required — the
+    execute-goals family reads the branch from here)
   - ordered execution list
   - dependency graph
   - parallelization notes
@@ -336,10 +338,15 @@ Entry format:
 - **Notes**: <deviations from plan, blockers, anything surprising>
 
 🔗 DEPENDENCIES:
+Branch: [The actual confirmed working branch name, exactly as it is named]
 Depends on: [List prerequisite goal IDs or `none`]
 Enables: [List downstream goal IDs or `none`]
 Parallel: [List parallelizable goal IDs or `none`]
 ```
+
+`Branch:` is the slot the branch metadata required by step 5 and the Quality Bar lives in. It is part of
+the canonical structure, so a child may replace its bracket body via `## Goal Template Overrides` but may
+not remove or relocate the line.
 
 ## Decision Rules
 
@@ -367,8 +374,8 @@ A valid output must satisfy all:
   `D-#####`.
 - Every completed goal ends with a successful `git commit` using exactly its calculated message,
   with no co-author attribution, and records its commit hash in the shared log.
-- Every goal includes branch metadata naming the actual confirmed working branch, whether or not that
-  name carries the asset ID.
+- Every goal names the actual confirmed working branch in its `🔗 DEPENDENCIES:` block's `Branch:` slot,
+  whether or not that name carries the asset ID, and the index records the same name.
 - The working branch is not a protected trunk.
 - Goal filename naming convention is enforced by the skill itself and remains idempotent on reruns.
 - Goals subfolder naming convention includes the same `S-#####` or `D-#####` asset ID.
@@ -427,8 +434,8 @@ The Quality Bar is authoritative; this checklist is the final operator pass befo
 - [ ] Current branch checked against the protected list; halted if protected.
 - [ ] Working branch confirmed with the user (or auto-confirmed because its name carries the asset
       ID), and its name left unchanged.
-- [ ] Each goal includes branch metadata with the real branch name and a calculated single-line
-  commit message.
+- [ ] Each goal's `🔗 DEPENDENCIES:` block carries a `Branch:` line with the real branch name, the index
+  records the same name, and each goal has a calculated single-line commit message.
 - [ ] Each completed goal has a successful final commit using its calculated message, no co-author
   attribution, and the recorded commit hash in the shared log.
 - [ ] Goal filename naming convention applied idempotently.
