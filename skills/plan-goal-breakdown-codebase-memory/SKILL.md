@@ -8,6 +8,8 @@ metadata:
   id: plan-goal-breakdown-codebase-memory
   inherits: "plan-goal-breakdown-base, codebase-memory"
   parent-files: "../plan-goal-breakdown-base/SKILL.md, ../codebase-memory/SKILL.md"
+  reference-files:
+    - "references/mcp-evidence-contract.md"
 ---
 
 # ⚠️ System Initialization Hook (Do Not Ignore)
@@ -20,6 +22,9 @@ parent skill files, resolved relative to this file's directory:
 
 Treat their contents as your primary global constraints, then apply the specialized rules below.
 Where they overlap, follow the precedence order in the base skill's Inheritance Contract.
+
+Also read `references/mcp-evidence-contract.md`, resolved relative to this file's directory — it
+defines the shared codebase-memory navigation, evidence, and index-prerequisite rules.
 
 # Plan Goal Breakdown (Codebase Memory)
 
@@ -34,63 +39,8 @@ graph instead of grep-first exploration.
 - Team wants deterministic implementation slices, each with clear done criteria.
 - Codebase discovery should be graph-based via codebase-memory MCP, not grep-first exploration.
 
-## Code Navigation Policy (Required)
-
-- Use codebase-memory MCP as the primary way to navigate code and architecture.
-- Tool selection, call syntax, workflows, and gotchas come from the inherited `codebase-memory`
-  skill — use its Quick Decision Matrix and Exploration/Tracing Workflows rather than restating tool
-  signatures here.
-- Do not do broad grep/rg scanning to understand architecture or call chains.
-- Limited text search (`search_code` or Grep) is allowed only after graph discovery, for narrow
-  confirmation in already-identified files.
-
-## MCP Evidence Contract (Required)
-
-Goals produced by this skill are execution instructions backed by the codebase-memory graph. They
-must not be generic implementation summaries.
-
-- Treat every user-provided description, acceptance criterion, file path, symbol, architecture
-  claim, and code reference as an unverified hypothesis. Before using it in a goal, validate it
-  against the indexed current code with codebase-memory MCP; do not treat request text or referenced
-  code as proof.
-- For each material supplied claim used by a goal, record whether MCP evidence confirms it, corrects
-  it, or leaves it unresolved. Cite the project, MCP tool, graph entity or source snippet, and the
-  resulting current-code fact. Resolve an unresolved claim with the smallest additional MCP query or
-  ask the user; never silently carry it into a materialized goal.
-- Before drafting, collect goal-specific evidence with `get_architecture`, `search_graph`,
-  `trace_path`, and `get_code_snippet` as applicable. Record the concrete project, symbol/module,
-  relationship, and source location or snippet returned by MCP.
-- Every goal must name the codebase-memory project and at least one real graph entity discovered for
-  that goal. A graph entity can be a symbol, route, module, type, caller, callee, dependency edge,
-  or changed-file impact result.
-- In every `🗺️ PLAN`, write the first one or more steps as executable MCP navigation actions. Each
-  action must name its intended query/target and expected decision, for example: `search_graph` for
-  `OrderService` in project `shop` to identify its command handler; `trace_path` from that handler
-  to `OrderRepository` before changing persistence behavior.
-- In every `🔍 VERIFY`, use MCP to re-check the exact affected caller/callee or dependency path,
-  naming the source and target graph entities. Pair this with relevant runnable and deterministic
-  manual checks.
-- A goal may only name a file after MCP identified it or after a narrow confirmation of an
-  MCP-identified file. State that provenance in `🧠 CONTEXT`.
-- Reject and rewrite statements such as "inspect the architecture", "find the relevant files",
-  "update the service", "trace dependencies", or "verify impact" when they do not name an MCP
-  project, target entity, relationship, and decision. Do not use placeholders such as
-  `<symbol>`, `<file>`, or "as needed" in a materialized goal.
-
-## Index Prerequisite (Hard Gate)
-
-This tightens the inherited Exploration Workflow's first step into a blocking gate. Before any
-decomposition or architecture analysis:
-
-1. Check indexed projects using `list_projects`.
-2. If needed, check status with `index_status`.
-3. If the target codebase is not indexed or indexing is incomplete/failed:
-   - Stop planning.
-   - Ask the user to index the repository first.
-   - Suggested action for the user: run `index_repository` for the repo.
-   - Resume only after the user confirms indexing completed.
-
-Do not silently continue with fallback grep when indexing is missing.
+The shared code-navigation, evidence, and index-prerequisite rules are defined in
+`references/mcp-evidence-contract.md`.
 
 ## Additional Inputs To Collect
 
@@ -136,9 +86,9 @@ Keep the base template structure exactly; replace only these bracket bodies:
 - The inherited validation-ledger requirement is not replaced by the bodies below. Every `🧠 CONTEXT`
   must identify the supplied claim/reference, the MCP tool and named entity/snippet used to validate
   it, and its confirmed or corrected current-code fact. An unresolved claim blocks materialization.
-- `🧠 CONTEXT:` → `[State the codebase-memory project, concrete graph findings, and source provenance for this goal. Name the symbols/modules/routes and caller/callee or dependency relationship that constrain the change.]
-- `🗺️ PLAN:` → `[Begin with concrete codebase-memory MCP actions. For each action, name the project, symbol/module/path target, tool, expected result, and decision it unlocks. Only then list narrow edits in MCP-identified files.]
-- `🔍 VERIFY:` → `[Re-run a concrete MCP relationship check for the exact graph entities changed or affected, then state runnable commands and deterministic manual checks.]
+- `🧠 CONTEXT:` → `[State the codebase-memory project, concrete graph findings, and source provenance for this goal. Name the symbols/modules/routes and caller/callee or dependency relationship that constrain the change.]`
+- `🗺️ PLAN:` → `[Begin with concrete codebase-memory MCP actions. For each action, name the project, symbol/module/path target, tool, expected result, and decision it unlocks. Only then list narrow edits in MCP-identified files.]`
+- `🔍 VERIFY:` → `[Re-run a concrete MCP relationship check for the exact graph entities changed or affected, then state runnable commands and deterministic manual checks.]`
 
 ## Additional Decision Rules
 
@@ -154,7 +104,7 @@ graph-exploration rule above.
 Beyond the base bar:
 
 - Code discovery and dependency tracing are driven by codebase-memory MCP.
-- Every goal meets the MCP Evidence Contract: project, graph entities, source provenance, concrete
+- Every goal meets the shared MCP evidence contract: project, graph entities, source provenance, concrete
   MCP plan queries, and an MCP relationship re-check are all present.
 - Every material supplied description and code reference is validated against current indexed code by
   MCP and is either confirmed or explicitly corrected before it appears in a goal.

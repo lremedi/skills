@@ -48,27 +48,9 @@ Same execution contract as the base, plus an Agility reconciliation pass before 
 ## Script
 
 Before determining which goals still need to run, query the asset's existing Task and Test children so
-local state can be reconciled against Agility — which is authoritative once the mirrored payload has
-been executed there. VersionOne exposes them through the asset's `Children` relation, downcast to one
-type at a time (`Children:Task`, `Children:Test`) — the same downcast pattern documented on the asset
-endpoint: https://versionone.github.io/api-docs/#restv1Data-create
-
-```typescript
-{
-  from: "Story",                   // or "Defect" — must match the asset ID prefix (S- / D-)
-  where: { "Number": "S-01004" },  // the Agility asset number the goal set folder is named after
-  select: [
-    "Children:Task.Number",
-    "Children:Task.Name",
-    "Children:Task.Description",
-    "Children:Task.AssetState",
-    "Children:Test.Number",
-    "Children:Test.Name",
-    "Children:Test.Description",
-    "Children:Test.AssetState",
-  ],
-}
-```
+local state can be reconciled against Agility. Use the `Children:Task`/`Children:Test` downcast
+query documented in `references/children-task-query.md`, which is authoritative once the mirrored
+payload has been executed there.
 
 Full reconciliation rules — matching by name, how to handle closed/deleted/edited Tasks, out-of-band
 additions, and query failures — are in `references/children-task-query.md`. Read it before step 1.

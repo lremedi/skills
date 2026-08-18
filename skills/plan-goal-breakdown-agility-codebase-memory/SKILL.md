@@ -8,6 +8,9 @@ metadata:
   id: plan-goal-breakdown-agility-codebase-memory
   inherits: "plan-goal-breakdown-base, codebase-memory"
   parent-files: "../plan-goal-breakdown-base/SKILL.md, ../codebase-memory/SKILL.md"
+  reference-files:
+    - "references/agility-payloads.md"
+    - "../plan-goal-breakdown-codebase-memory/references/mcp-evidence-contract.md"
 ---
 
 # ⚠️ System Initialization Hook (Do Not Ignore)
@@ -21,6 +24,10 @@ parent skill files, resolved relative to this file's directory:
 Treat their contents as your primary global constraints, then apply the specialized rules below.
 Where they overlap, follow the precedence order in the base skill's Inheritance Contract.
 
+Also read `references/agility-payloads.md` and
+`../plan-goal-breakdown-codebase-memory/references/mcp-evidence-contract.md`, resolved relative to
+this file's directory — they define the shared Agility payload and codebase-memory evidence rules.
+
 # Plan Goal Breakdown Agility (Codebase Memory)
 
 Same goal-file contract as the base, plus Agility MCP context and payload artifacts **and**
@@ -33,15 +40,8 @@ graph-based code discovery via codebase-memory MCP.
 - User wants manual tests generated from implementation evidence in the shared log file.
 - Team wants code navigation based on codebase-memory MCP rather than grep-first exploration.
 
-## Code Navigation Policy (Required)
-
-- Use codebase-memory MCP as the primary way to understand architecture and dependencies.
-- Tool selection, call syntax, workflows, and gotchas come from the inherited `codebase-memory`
-  skill — use its Quick Decision Matrix and Exploration/Tracing Workflows rather than restating tool
-  signatures here.
-- Do not perform broad grep/rg scans to map architecture or call paths.
-- Text search (`search_code` or Grep) can be used only for narrow confirmation after graph-driven
-  discovery.
+The shared codebase-memory navigation, evidence, and index-prerequisite rules are defined in
+`../plan-goal-breakdown-codebase-memory/references/mcp-evidence-contract.md`.
 
 ## Goal Authoring Policy (MCP-First, Required)
 
@@ -55,54 +55,9 @@ graph-based code discovery via codebase-memory MCP.
   dependency/caller re-check via graph tools) plus implementation checks.
 - Do not author goals that instruct broad grep-first exploration.
 
-## MCP Evidence Contract (Required)
-
-Goals produced by this skill are execution instructions backed by the codebase-memory graph and
-Agility asset evidence. They must not be generic implementation summaries.
-
-- Treat every user-provided description, acceptance criterion, file path, symbol, architecture
-  claim, and code reference as an unverified hypothesis. The fetched Agility description is also
-  unverified implementation context. Before using any of these claims in a goal, validate it against
-  the indexed current code with codebase-memory MCP; neither request text nor Agility text proves
-  the current implementation.
-- For each material supplied or Agility-derived claim used by a goal, record whether MCP evidence
-  confirms it, corrects it, or leaves it unresolved. Cite the project, MCP tool, graph entity or
-  source snippet, and the resulting current-code fact. Resolve an unresolved claim with the smallest
-  additional MCP query or ask the user; never silently carry it into a materialized goal or payload.
-- Before drafting, collect goal-specific evidence with `get_architecture`, `search_graph`,
-  `trace_path`, and `get_code_snippet` as applicable. Record the concrete project, symbol/module,
-  relationship, and source location or snippet returned by MCP.
-- Every goal must name the codebase-memory project and at least one real graph entity discovered for
-  that goal. A graph entity can be a symbol, route, module, type, caller, callee, dependency edge,
-  or changed-file impact result.
-- In every `🗺️ PLAN`, write the first one or more steps as executable MCP navigation actions. Each
-  action must name its intended query/target and expected decision, for example: `search_graph` for
-  `OrderService` in project `shop` to identify its command handler; `trace_path` from that handler
-  to `OrderRepository` before changing persistence behavior.
-- In every `🔍 VERIFY`, use MCP to re-check the exact affected caller/callee or dependency path,
-  naming the source and target graph entities. Pair this with required manual QE and relevant
-  implementation checks.
-- A goal may only name a file after MCP identified it or after a narrow confirmation of an
-  MCP-identified file. State that provenance in `🧠 CONTEXT`.
-- Reject and rewrite statements such as "inspect the architecture", "find the relevant files",
-  "update the service", "trace dependencies", or "verify impact" when they do not name an MCP
-  project, target entity, relationship, and decision. Do not use placeholders such as
-  `<symbol>`, `<file>`, or "as needed" in a materialized goal.
-
-## Index Prerequisite (Hard Gate)
-
-This tightens the inherited Exploration Workflow's first step into a blocking gate. Before planning
-starts:
-
-1. Check indexed projects with `list_projects`.
-2. Validate project status with `index_status` when needed.
-3. If the target codebase is not indexed or the index is incomplete/failed:
-   - Halt planning.
-   - Ask the user to index the repository first.
-   - Suggested user action: run `index_repository` for the repo.
-   - Continue only after the user confirms indexing is complete.
-
-Do not silently continue with fallback grep-based discovery.
+The shared code-navigation, evidence, and index-prerequisite rules are defined in
+`../plan-goal-breakdown-codebase-memory/references/mcp-evidence-contract.md`; its Agility-only
+additions apply here.
 
 ## Additional Inputs To Collect
 
@@ -144,118 +99,8 @@ In base **step 2 (Extract decision points)**, the verification scope to confirm 
 In base **step 3 (Decompose into goals)**, additionally embed MCP-first execution instructions in
 each goal so implementers follow codebase-memory navigation during execution.
 
-Insert the following steps between base step 5 (Materialize goal files) and base step 6 (Create plan
-index):
-
-6. Create Agility payload files as part of goal creation.
-
-- Generate and save two createMany-compatible JSON payload files in the same goals folder:
-  - `.goals/<asset-id>-<feature-slug>/payload.tasks.<asset-id>-<feature-slug>.json`
-  - `.goals/<asset-id>-<feature-slug>/payload.tests.<asset-id>-<feature-slug>.json`
-- These files are required artifacts and must be produced in the same run that creates goal files.
-
-Agility goal mirror rule (required):
-
-- Treat Agility child Tasks as the mirrored representation of goal files.
-- Mirror only the `NN-*` goal files: create exactly one Task payload item per goal file, excluding the
-  index, the log, `pr-description.md`, and the payload JSONs.
-- Task `Description` must contain the full goal content converted to XHTML, preserving all goal
-  sections and dependency metadata.
-- Do not collapse a goal to a short summary in Task `Description`.
-
-7. Build and save child Task payload.
-
-- Create a createMany-compatible POST body array draft where each goal maps to one child Task.
-- Use only this field structure for each item:
-  - `AssetType`: `Task`
-  - `Name`: goal-aligned title derived from the goal objective (include goal sequence/slug when
-    useful for traceability)
-  - `Description`: XHTML-safe full-fidelity mirror of the corresponding goal file content
-  - `Parent`: Story/Defect number token (example `S-01004`)
-- Do not add extra mirroring metadata fields.
-- Save this JSON into `.goals/<asset-id>-<feature-slug>/payload.tasks.<asset-id>-<feature-slug>.json`.
-- User executes the API request using the generated file.
-
-Task payload pattern:
-
-```json
-[
-  {
-    "AssetType": "Task",
-    "Name": "New Task",
-    "Description": "xhtml description",
-    "Parent": "S-01004"
-  },
-  {
-    "AssetType": "Task",
-    "Name": "New Task2",
-    "Description": "xhtml description2",
-    "Parent": "S-01004"
-  }
-]
-```
-
-8. Build and save child Test payload.
-
-- Create the initial tests payload file during planning from goal acceptance criteria as manual QE
-  scenarios.
-- Update/refine the same tests payload after implementation using
-  `.goals/<asset-id>-<feature-slug>/log.<asset-id>-<feature-slug>.md` outcomes, verification
-  results, and deviations.
-- Create a createMany-compatible POST body array for child Tests using only:
-  - `AssetType`: `Test`
-  - `Name`: manual QE test title
-  - `Description`: XHTML-safe manual QE steps and acceptance checks executed by a human tester
-  - `Parent`: Story/Defect number token (example `S-01004`)
-- Save this JSON into `.goals/<asset-id>-<feature-slug>/payload.tests.<asset-id>-<feature-slug>.json`.
-- Trigger rule: the final goal's PLAN/DONE WHEN/VERIFY carries the instruction for the
-  `execute-goals-agility-codebase-memory` skill running the set to refresh the tests payload at
-  execution time from execution-log evidence.
-- Do not add a special "last task" field in Agility payloads.
-- Do not include unit-test, integration-test, or e2e automation instructions in test payload entries.
-- If a goal has no direct user-facing behavior, produce manual smoke/regression checks for the
-  affected surface (for example, startup, key flow sanity, and no-regression navigation).
-
-Test payload pattern:
-
-```json
-[
-  {
-    "AssetType": "Test",
-    "Name": "New Test",
-    "Description": "xhtml description",
-    "Parent": "S-01004"
-  },
-  {
-    "AssetType": "Test",
-    "Name": "New Test2",
-    "Description": "xhtml description2",
-    "Parent": "S-01004"
-  }
-]
-```
-
-Then continue with base step 6 (Create plan index) and base step 7 (Validate quality), adding these
-validations to step 7:
-
-- Ensure both payload files exist and follow the required Task/Test structure exactly.
-- Ensure the tasks payload contains a 1:1 mapping between goal files and Task items.
-- Ensure each Task `Description` is XHTML and contains the full mirrored goal content, not a summary.
-- Ensure test payload entries are manual QE, human-executed checks (not unit/integration/e2e
-  automation items).
-- Ensure each test emphasizes user-facing behavior; when not available, ensure smoke/regression
-  sanity checks are provided.
-- Ensure the test payload is initially created during planning and later refreshable from
-  implementation log evidence.
-- Ensure every goal satisfies the MCP Evidence Contract and contains no generic discovery
-  placeholders.
-- Ensure every planned MCP query identifies a concrete project and graph target, and every
-  verification query re-checks a named relationship affected by the goal.
-- Ensure every material supplied or Agility-derived description and code reference used in a goal
-  has a documented MCP confirmation or correction; reject a goal or payload that treats asset text
-  as current-code evidence.
-- Ensure each Task payload's full XHTML goal mirror preserves the concrete MCP context, plan, and
-  verification instructions.
+Apply the shared Agility payload artifact, mirror, Task/Test payload, and validation rules from
+`references/agility-payloads.md`.
 
 ## Goal Template Overrides
 
@@ -298,7 +143,7 @@ Beyond the base bar:
 - Code discovery uses codebase-memory MCP.
 - Every goal explicitly instructs MCP-first execution (context, plan, and verify), not grep-first
   exploration.
-- Every goal meets the MCP Evidence Contract: project, graph entities, source provenance, concrete
+- Every goal meets the shared MCP evidence contract: project, graph entities, source provenance, concrete
   MCP plan queries, and an MCP relationship re-check are all present.
 - Every material supplied or Agility-derived description and code reference is validated against
   current indexed code by MCP and is either confirmed or explicitly corrected before it appears in a
