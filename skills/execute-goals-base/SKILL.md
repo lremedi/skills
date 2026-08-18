@@ -93,7 +93,8 @@ exactly as written:
   working branch.
 - **`NN-<id>-<slug>.md`** — one goal per file: 🎯 GOAL, 🧠 CONTEXT, 📏 CONSTRAINTS, 📊 PRIORITY,
   🗺️ PLAN, 🛑 DONE WHEN, 🔍 VERIFY, ✅ COMMIT, 🛡️ SAFETY NET, 📝 LOG, 🔗 DEPENDENCIES.
-- **`log.<id>.md`** — the shared file every goal appends one entry to on completion or block.
+- **`log.<asset-id>-<feature-slug>.md`** — the shared file every goal appends one entry to on completion
+  or block.
 - **`pr-description.md`** — a planning-time stub. The one exception to "read-only input": the last goal
   in the sequence finalizes this file as part of its own PLAN/DONE WHEN/VERIFY (see PR Description
   Handoff below). No other goal touches it.
@@ -198,8 +199,9 @@ Resolving it is this skill's job, not the goal file's:
      the Autonomy Contract — halt and ask.
 
 2. **Read the shared log and determine what still needs to run.**
-   - Match log entries to goals by slug (the goal file's filename without the number, e.g.
-     `filter-supported-attachment-types`).
+   - Match log entries to goals by slug — the filename with both the sequence number and the asset ID
+     stripped, e.g. `01-S-12345-filter-supported-attachment-types.md` matches the log header
+     `## filter-supported-attachment-types`.
    - Most recent entry ✅ done → skip executing it; trust the record unless something you encounter
      later directly contradicts it.
    - Most recent entry ⚠️ partial, ❌ blocked, or no entry at all → still needs work.

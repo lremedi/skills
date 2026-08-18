@@ -66,7 +66,8 @@ index):
 Agility goal mirror rule (required):
 
 - Treat Agility child Tasks as the mirrored representation of goal files.
-- Create exactly one Task payload item per goal file (excluding index and log files).
+- Mirror only the `NN-*` goal files: create exactly one Task payload item per goal file, excluding the
+  index, the log, `pr-description.md`, and the payload JSONs.
 - Task `Description` must contain the full goal content converted to XHTML, preserving all goal
   sections and dependency metadata.
 - Do not collapse a goal to a short summary in Task `Description`.

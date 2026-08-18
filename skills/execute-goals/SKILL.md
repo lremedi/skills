@@ -2,7 +2,7 @@
 name: execute-goals
 description: >-
   Execute a goal set already produced by plan-goal-breakdown — reads the index and dependency
-  graph, resumes from the shared log, runs each goal file's GOAL/CONTEXT/CONSTRAINTS/PLAN/DONE
+  graph, resumes from the shared log, runs each goal file's GOAL/CONTEXT/CONSTRAINTS/PRIORITY/PLAN/DONE
   WHEN/VERIFY/COMMIT/SAFETY NET/LOG/DEPENDENCIES sections faithfully, and reports outcomes. Use
   whenever the user asks to execute, run, work through, implement, or "kick off" a goal set, points
   at a ".goals/" folder or an index file like "00-story-id-index.md", or names a story/defect ID

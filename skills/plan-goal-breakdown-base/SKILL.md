@@ -247,7 +247,7 @@ Dependency metadata default format:
     confirmed with the user, never enforced.
   - Enforce idempotently when re-running the skill (update generated artifacts in place, no
     duplicated naming text).
-- Goal template sections: GOAL, CONTEXT, CONSTRAINTS, PRIORITY, PLAN, DONE WHEN, VERIFY,
+- Goal template sections: GOAL, CONTEXT, CONSTRAINTS, PRIORITY, PLAN, DONE WHEN, VERIFY, COMMIT,
   SAFETY NET, LOG, DEPENDENCIES.
 
 6. Create plan index.
@@ -381,7 +381,9 @@ A valid output must satisfy all:
 - Goals subfolder naming convention includes the same `S-#####` or `D-#####` asset ID.
 - `00` is used only by the index file, and the index file name includes the same `S-#####` or
   `D-#####` asset ID.
-- Folder contains one index, one log stub, plus one file per goal.
+- Folder contains one index, one log stub, one `pr-description.md` stub, and one file per goal. Variants
+  may add their own artifacts on top of that (for example the agility payload JSONs) — this bullet is a
+  minimum, not a prohibition.
 - Every goal includes a `📝 LOG:` section with the shared log file path and required entry format.
 - The last goal in the ordered sequence includes, in its own PLAN/DONE WHEN/VERIFY, the requirement to
   finalize `pr-description.md` per the `pr-description` skill, gated on every other goal's shared-log
