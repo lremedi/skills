@@ -34,8 +34,10 @@ artifacts that mirror goals to child Tasks and manual QE Tests.
 
 ## Additional Inputs To Collect
 
-In addition to the base inputs (the Agility asset number is promoted to the first thing you ask for):
+In addition to the base inputs:
 
+- **Base input 6 override:** ask for the Agility asset number first; it remains mandatory before
+  materializing goals.
 8. User context: folder/domain/repo area that affects decomposition.
 
 ## Agility Context Requirement

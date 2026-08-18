@@ -56,6 +56,7 @@ Canonical extension-point headings — use these exact names so a reader can dif
 
 | Heading | Purpose |
 |---|---|
+| `## When To Use` | invocation scope and applicability |
 | `## Specialization` | one-paragraph statement of what this variant changes |
 | `## Additional Inputs To Collect` | extra inputs, numbered continuing from the base list |
 | `## Procedure Overrides` | bullet-level deltas to the base procedure |
@@ -64,6 +65,11 @@ Canonical extension-point headings — use these exact names so a reader can dif
 | `## Additional Quality Bar` | extra pass/fail criteria |
 | `## Additional Output Contract` | extra artifacts |
 | `## Additional Completion Checklist` | extra operator checks |
+| `## Code Navigation Policy` | codebase-memory navigation and search restrictions |
+| `## Index Prerequisite` | codebase-memory indexing hard gate |
+| `## Agility Context Requirement` | Agility asset context and validation requirements |
+| `## Goal Authoring Policy` | codebase-memory goal-authoring requirements |
+| `## Script` | executable reconciliation or integration procedure |
 
 Anything a child declares outside these headings is a new policy of its own, not an override.
 - An override must be the **smallest possible delta, and must never restate inherited text.** Quote
