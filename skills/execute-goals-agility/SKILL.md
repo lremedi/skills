@@ -90,6 +90,12 @@ Insert a new step **before** base step 1 (Locate the goal set and confirm the br
 Base **step 2 (Read the shared log and determine what still needs to run)** now reads the log as
 updated by step 0, so a goal Agility already shows Done is skipped here rather than re-executed.
 
+## Procedure Overrides
+
+- Add to base step 4: when the last goal's PLAN/DONE WHEN/VERIFY calls for it, refresh
+  `payload.tests.<asset-id>-<feature-slug>.json` at execution time from the shared log's actual
+  outcomes, verification results, and deviations — not from the goal's PLAN.
+
 ## Additional Decision Rules
 
 - Agility wins on any disagreement between it and local files — reconcile toward Agility, never the
@@ -108,6 +114,8 @@ Beyond the base bar:
   Agility for anything it disagreed with.
 - No goal was executed that Agility already shows as done; no goal whose Agility Task was deleted ran
   without being surfaced as blocked first.
+- `payload.tests.<asset-id>-<feature-slug>.json` was refreshed from the shared log's actual outcomes,
+  verification results, and deviations when the last goal's sections called for it.
 
 ## Additional Output Contract
 
@@ -117,6 +125,8 @@ Beyond the base artifacts:
   normal execution entries.
 - Goal files may have their identity/status fields (not PLAN/CONSTRAINTS/VERIFY) updated to match a
   changed Name/Description in Agility.
+- `.goals/<asset-id>-<feature-slug>/payload.tests.<asset-id>-<feature-slug>.json` may be refreshed
+  from execution-log evidence.
 
 ## Additional Completion Checklist
 
@@ -126,3 +136,5 @@ Beyond the base artifacts:
 - [ ] Local shared log and goal-file identity/status fields were updated to match Agility.
 - [ ] No goal ran that Agility already showed done; no goal with a deleted Agility Task ran without
       being marked blocked first.
+- [ ] `payload.tests.<asset-id>-<feature-slug>.json` was refreshed from the shared log when the last
+  goal's sections required it.

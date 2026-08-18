@@ -14,6 +14,10 @@ Before executing anything, reconcile: pull the asset's actual child Tasks/Tests,
 what the local goal files and shared log currently say, report every difference found, and update the
 local files so they agree with Agility — never the other way around.
 
+This sync is deliberately one-way: executors never write to Agility. Closing a Task is a human action;
+the closed-in-Agility reconciliation rule below is how that decision reaches the goal set on the next
+run.
+
 ## What to ask the Agility MCP for
 
 VersionOne exposes a Story/Defect's Task and Test children through its `Children` relation. Downcasting

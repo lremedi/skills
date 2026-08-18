@@ -110,6 +110,10 @@ Base **step 4 (Run each eligible goal)** keeps every bullet it already has. Appl
   example `trace_path` between the caller/callee pair the goal names) before the goal's own VERIFY
   commands, to confirm the dependency shape VERIFY assumes still holds."
 
+- Add to base step 4: when the last goal's PLAN/DONE WHEN/VERIFY calls for it, refresh
+  `payload.tests.<asset-id>-<feature-slug>.json` at execution time from the shared log's actual
+  outcomes, verification results, and deviations — not from the goal's PLAN.
+
 ## Additional Decision Rules
 
 - Agility wins on any disagreement between it and local files.
@@ -129,6 +133,8 @@ Beyond the base bar:
   named graph-based relationship re-check.
 - If the project wasn't indexed, execution halted and the user was asked to index first.
 - No goal ran that Agility already showed done; no goal with a deleted Agility Task ran unmarked.
+- `payload.tests.<asset-id>-<feature-slug>.json` was refreshed from the shared log's actual outcomes,
+  verification results, and deviations when the last goal's sections called for it.
 
 ## Additional Output Contract
 
@@ -136,6 +142,8 @@ Beyond the base artifacts:
 
 - The shared log may gain reconciliation notes in addition to normal execution entries.
 - Goal files may have identity/status fields (not PLAN/CONSTRAINTS/VERIFY) updated to match Agility.
+- `.goals/<asset-id>-<feature-slug>/payload.tests.<asset-id>-<feature-slug>.json` may be refreshed
+  from execution-log evidence.
 
 ## Additional Completion Checklist
 
@@ -146,3 +154,5 @@ Beyond the base artifacts:
 - [ ] Each executed goal's CONTEXT was re-confirmed via codebase-memory MCP, with drift flagged.
 - [ ] Each executed goal's VERIFY includes a named graph-based relationship re-check.
 - [ ] No goal ran that Agility already showed done; no goal with a deleted Agility Task ran unmarked.
+- [ ] `.goals/<asset-id>-<feature-slug>/payload.tests.<asset-id>-<feature-slug>.json` was refreshed
+  from the shared log when the last goal's sections required it.

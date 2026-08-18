@@ -208,8 +208,9 @@ Task payload pattern:
   - `Description`: XHTML-safe manual QE steps and acceptance checks executed by a human tester
   - `Parent`: Story/Defect number token (example `S-01004`)
 - Save this JSON into `.goals/<asset-id>-<feature-slug>/payload.tests.<asset-id>-<feature-slug>.json`.
-- Trigger rule: completion of the final goal in the markdown planning flow is the LLM control signal
-  to refresh the tests payload from execution-log evidence.
+- Trigger rule: the final goal's PLAN/DONE WHEN/VERIFY carries the instruction for the
+  `execute-goals-agility-codebase-memory` skill running the set to refresh the tests payload at
+  execution time from execution-log evidence.
 - Do not add a special "last task" field in Agility payloads.
 - Do not include unit-test, integration-test, or e2e automation instructions in test payload entries.
 - If a goal has no direct user-facing behavior, produce manual smoke/regression checks for the
@@ -327,8 +328,8 @@ Beyond the base artifacts, in the same goals folder:
       automation instructions).
 - [ ] Child Test payload prioritizes user-facing behavior validation and uses smoke/regression
       checks when user-facing flows do not exist.
-- [ ] Final-goal completion used as the LLM trigger to refresh the test payload from implementation
-      log evidence.
+- [ ] The last goal's PLAN/DONE WHEN/VERIFY carries the execution-time tests-payload refresh
+  instruction.
 - [ ] Every goal includes MCP-first execution guidance in `🧠 CONTEXT`, `🗺️ PLAN`, and `🔍 VERIFY`.
 - [ ] Every goal cites concrete codebase-memory entities and source provenance.
 - [ ] Every material supplied or Agility-derived description and code reference has concrete MCP
