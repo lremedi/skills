@@ -36,7 +36,7 @@ artifacts that mirror goals to child Tasks and manual QE Tests.
 
 In addition to the base inputs (the Agility asset number is promoted to the first thing you ask for):
 
-- User context: folder/domain/repo area that affects decomposition.
+8. User context: folder/domain/repo area that affects decomposition.
 
 ## Agility Context Requirement
 
@@ -59,7 +59,9 @@ In base **step 2 (Extract decision points)**, the verification scope to confirm 
 (human-executed, user-facing where possible) plus what is deferred.
 
 Apply the shared Agility payload artifact, mirror, Task/Test payload, and validation rules from
-`references/agility-payloads.md` as the steps between base step 5 and base step 6.
+`references/agility-payloads.md` as procedure substeps 5a (payload artifacts and mirror), 5b
+(Task/Test payloads), and 5c (payload validations) between base step 5 and base step 6 (Create plan
+index).
 
 ## Additional Decision Rules
 

@@ -63,8 +63,8 @@ additions apply here.
 
 In addition to the base inputs (the Agility asset number is promoted to the first thing you ask for):
 
-- User context: folder/domain/repo area that affects decomposition.
-- Codebase-memory project name: required when it cannot be inferred from workspace/repo context.
+8. User context: folder/domain/repo area that affects decomposition.
+9. Codebase-memory project name: required when it cannot be inferred from workspace/repo context.
 
 ## Agility Context Requirement
 
@@ -100,7 +100,9 @@ In base **step 3 (Decompose into goals)**, additionally embed MCP-first executio
 each goal so implementers follow codebase-memory navigation during execution.
 
 Apply the shared Agility payload artifact, mirror, Task/Test payload, and validation rules from
-`references/agility-payloads.md`.
+`references/agility-payloads.md` as procedure substeps 5a (payload artifacts and mirror), 5b
+(Task/Test payloads), and 5c (payload validations) between base step 5 and base step 6 (Create plan
+index).
 
 ## Goal Template Overrides
 

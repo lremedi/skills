@@ -78,6 +78,8 @@ changes:
 
 ## Additional Decision Rules
 
+- Supersedes the base Autonomy Contract bullet beginning "Only three things legitimately interrupt a
+  run": a missing or unhealthy codebase-memory index is a fourth legitimate interrupt.
 - If the codebase-memory index is missing or unhealthy for the target project, halt and ask the user to
   index before executing any goal in the set.
 - If graph-based re-confirmation contradicts a goal's CONTEXT, stop and flag the drift rather than

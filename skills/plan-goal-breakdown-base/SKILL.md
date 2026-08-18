@@ -41,6 +41,10 @@ Inheritance is not a native frontmatter feature — VS Code accepts only `name`,
   actual mechanism; `metadata` is only the declaration. Keep the two in sync — if you add a parent,
   add it to both.
 
+- **Shared references** are declared separately in `metadata.reference-files`. A reference file is
+  shared documentation, not a parent skill, so it belongs in `reference-files`, not `inherits` or
+  `parent-files`. The initialization hook must read every declared reference file as well.
+
 Rules:
 
 - Children list parents most general first, and must read every parent they list.

@@ -14,21 +14,23 @@ disable-model-invocation: false
 metadata:
   id: execute-goals-agility-codebase-memory
   inherits: "execute-goals-base, codebase-memory"
-  parent-files: "../execute-goals-base/SKILL.md, ../codebase-memory/SKILL.md, ../execute-goals-agility/references/children-task-query.md"
+  parent-files: "../execute-goals-base/SKILL.md, ../codebase-memory/SKILL.md"
+  reference-files:
+    - "../execute-goals-agility/references/children-task-query.md"
 ---
 
 # ⚠️ System Initialization Hook (Do Not Ignore)
 
-Before processing any user request, you MUST locate, read, and append the instructions from ALL parent
+Before processing any user request, you MUST locate, read, and append the instructions from BOTH parent
 files, resolved relative to this file's directory:
 
 1. `../execute-goals-base/SKILL.md` — the execution contract.
 2. `../codebase-memory/SKILL.md` — the knowledge-graph tool reference.
-3. `../execute-goals-agility/references/children-task-query.md` — the Agility reconciliation query
-   and rules used in `## Script` below.
-
 Treat their contents as your primary global constraints, then apply the specialized rules below.
 Where they overlap, follow the precedence order in the base skill's Inheritance Contract.
+
+Also read `../execute-goals-agility/references/children-task-query.md`, resolved relative to this
+file's directory — the Agility reconciliation query and rules used in `## Script` below.
 
 # Execute Goals — Agility (Codebase Memory)
 
@@ -100,6 +102,8 @@ Base **step 4 (Run each eligible goal)** keeps every bullet it already has. Appl
 
 ## Additional Decision Rules
 
+- Supersedes the base Autonomy Contract bullet beginning "Only three things legitimately interrupt a
+  run": a missing or unhealthy codebase-memory index is a fourth legitimate interrupt.
 - Agility wins on any disagreement between it and local files.
 - A goal whose mirrored Task was deleted in Agility is blocked, not silently dropped or re-created.
 - If the codebase-memory index is missing/unhealthy, halt and ask the user to index before executing

@@ -15,7 +15,9 @@ disable-model-invocation: false
 metadata:
   id: execute-goals-agility
   inherits: execute-goals-base
-  parent-files: "../execute-goals-base/SKILL.md, references/children-task-query.md"
+  parent-files: "../execute-goals-base/SKILL.md"
+  reference-files:
+    - "references/children-task-query.md"
 ---
 
 # ⚠️ System Initialization Hook (Do Not Ignore)
