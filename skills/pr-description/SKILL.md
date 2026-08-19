@@ -74,8 +74,9 @@ self-evident from "What changed."
 ### How to verify
 The exact commands a reviewer can run themselves, plus deterministic manual QE steps. Pull these
 directly from each goal's VERIFY section when working from a goal set, or reconstruct them from the
-repo's actual test/lint scripts when working from a bare diff. Never list a command that wasn't
-actually run.
+repo's actual test/lint scripts when working from a bare diff. Keep them scoped to what this change
+touches — the specific test files or filters that were run, not a whole-suite command nobody ran. Never
+list a command that wasn't actually run.
 
 ### Risk / rollback
 Blast radius, feature flags, migration or rollback notes — only if there's something a reviewer needs

@@ -63,6 +63,7 @@ Task payload pattern:
 - Trigger rule: the final goal's PLAN/DONE WHEN/VERIFY carries the instruction for the executing Agility skill to refresh the tests payload at execution time from execution-log evidence.
 - Do not add a special "last task" field in Agility payloads.
 - Do not include unit-test, integration-test, or e2e automation instructions in test payload entries.
+- Scope every entry to behavior this asset's goals actually change: each entry must trace to a specific goal's change, and the smoke/regression fallback covers only the touched area, never a general pass over untouched features.
 - If a goal has no direct user-facing behavior, produce manual smoke/regression checks for the affected surface (for example, startup, key flow sanity, and no-regression navigation).
 
 Test payloads share the Task payload shape:
@@ -93,4 +94,5 @@ Add these validations to the plan's quality step:
 - Ensure each Task `Description` is XHTML and contains the full mirrored goal content, not a summary.
 - Ensure test payload entries are manual QE, human-executed checks (not unit/integration/e2e automation items).
 - Ensure each test emphasizes user-facing behavior; when not available, ensure smoke/regression sanity checks are provided.
+- Ensure each entry traces to a specific goal's change and that no entry asks a tester to exercise behavior no goal touched.
 - Ensure the test payload is initially created during planning and later refreshable from implementation log evidence.

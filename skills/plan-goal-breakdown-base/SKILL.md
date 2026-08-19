@@ -69,6 +69,7 @@ Canonical extension-point headings — use these exact names so a reader can dif
 | `## Index Prerequisite` | codebase-memory indexing hard gate |
 | `## Agility Context Requirement` | Agility asset context and validation requirements |
 | `## Goal Authoring Policy` | codebase-memory goal-authoring requirements |
+| `## Test Scoping Policy` | test-setup detection, test run scoping, and test-authoring limits |
 | `## Script` | executable reconciliation or integration procedure |
 
 Anything a child declares outside these headings is a new policy of its own, not an override.
@@ -104,6 +105,8 @@ defect IDs (`D-#####`).
 6. Agility asset ID: required story or defect number for artifact naming and commit prefixes.
 7. Working branch: confirmation of which branch the work lands on. Preserve whatever name it already
    has; see Working Branch Requirement.
+8. PR description: whether this goal set should produce a `pr-description.md` at all. Optional — ask,
+   never assume; see PR Description Requirement.
 
 If these are incomplete, ask concise clarifying questions before writing files.
 
@@ -149,7 +152,20 @@ vendor/integration branch, a branch someone else created). Branch naming is ther
    name change the asset ID used for folders, filenames, or commit prefixes — those come from the
    asset ID alone and are unaffected by a non-conforming branch.
 
-## PR Description Requirement (Required)
+## PR Description Requirement (Optional — Ask First)
+
+A PR description is **optional**. Ask the user once, while collecting inputs and before materializing
+any file, whether they want this goal set to produce one:
+
+- **Yes** → apply everything below.
+- **No** → skip all of it: no `pr-description.md` stub, no added deliverable on the last goal, no
+  related quality-bar or checklist items. Record the decision in the index (one line: no PR description
+  planned) so a later run does not silently re-add it. It can still be produced at any time by invoking
+  the `pr-description` skill directly against the finished branch, so declining costs nothing.
+- **No answer available** (non-interactive run, user did not respond) → treat as no, and state that
+  assumption in the summary rather than creating the artifact.
+
+Everything from here to the end of this section applies only when the user asked for one.
 
 Before materializing the final goal file — the highest-numbered goal in the ordered sequence — read
 `../pr-description/SKILL.md`, resolved relative to this file's directory. It defines the exact
@@ -185,6 +201,46 @@ artifacts get skill names or repo-root-relative paths, never paths relative to a
   template section is introduced.
 - At materialization time, the description can only be scaffolded, not finished — no other goal has
   executed yet. Create the stub in step 6 below; the last goal finishes it later, at execution time.
+
+## Test Scoping Policy (Required)
+
+Tests in a goal exist to prove *that goal's change*, not to audit the repository. Apply this section
+whenever a goal's PLAN, DONE WHEN, or VERIFY touches tests.
+
+1. **Detect before prescribing.** While discovering context (step 1), establish whether the repo
+   actually has a usable test setup: a runner declared in the manifest (`package.json` scripts,
+   `pytest.ini`/`pyproject.toml`, `go test`, test `*.csproj`, Gradle/Maven surefire, and so on) *and*
+   existing tests covering — or adjacent to — the code this change touches. Record what you found in
+   the goal's CONTEXT as confirmed evidence.
+   - **Testing available** → the affected tests belong in VERIFY, scoped per rules 2–4.
+   - **No test setup, or none reachable for the touched code** → do not invent one. Do not add a
+     runner, harness, fixture framework, or CI wiring that the requested change does not itself
+     require. Fall back to the deterministic manual checks this base already mandates, and state in
+     CONTEXT that no test setup exists.
+
+2. **Scope the run to the change.** Name the narrowest invocation that exercises what the goal
+   changed — a specific test file, directory, or name filter, for example
+   `npm test -- src/auth/login.test.ts`, `pytest tests/auth/test_login.py::test_rejects_expired`,
+   `go test ./internal/auth/...`, `dotnet test --filter FullyQualifiedName~LoginTests`. A bare
+   whole-repository invocation (`npm test`, `pytest`, `go test ./...`) is permitted only when the
+   change is genuinely cross-cutting (shared type or contract, build config, dependency bump, wide
+   rename) or the runner offers no filtering mechanism — and when used, the goal must say which of
+   those two reasons applies.
+
+3. **Scope the tests you write to the change.** New or edited cases cover the behavior this goal adds,
+   fixes, or breaks, and nothing beyond it. Extend the nearest existing test file rather than creating
+   a new one, and match the surrounding test style. Do not backfill coverage for untouched code, do not
+   set coverage-percentage targets, and do not restructure existing tests to accommodate a new case
+   unless the goal is itself a test-refactor goal.
+
+4. **One goal's verification stays in that goal.** Goal N verifies goal N's change plus regressions the
+   change could plausibly cause in the same module. Wider passes — full regression, e2e sweeps,
+   performance runs — belong to an explicit later goal when the work warrants one; they are not appended
+   to every goal's VERIFY.
+
+5. **Never name a test command you have not confirmed.** The script name comes from the manifest you
+   read; the test path comes from a file you found. An unconfirmed test command is an unresolved claim
+   under step 1 of the Procedure and cannot be materialized.
 
 ## Procedure
 
@@ -268,13 +324,16 @@ Dependency metadata default format:
   - ordered execution list
   - dependency graph
   - parallelization notes
+  - one line recording whether a PR description is planned for this set (per PR Description
+    Requirement), so a rerun does not re-ask or silently re-add it
 - Create `log.<asset-id>-<feature-slug>.md` stub in the same subfolder (skip if it already exists):
   ```markdown
   # Execution Log: <asset-id>-<feature-slug>
 
   <!-- Each goal appends one entry here on completion or block. -->
   ```
-- Create `pr-description.md` stub in the same subfolder (skip if it already exists):
+- Create `pr-description.md` stub in the same subfolder **only if the user asked for a PR description**
+  (skip if it already exists; skip entirely if they declined):
   ```markdown
   # PR Description — <asset-id>-<feature-slug>
 
@@ -290,7 +349,11 @@ Dependency metadata default format:
   as confirmed evidence or as an explicit correction; no goal may silently preserve a disproven or
   unresolved claim.
 - Inspect `package.json` or the equivalent manifest and include runnable verification commands when
-  available.
+  available, each scoped to the goal's own change per the Test Scoping Policy — confirm the script and
+  test paths exist before writing them into a goal.
+- Ensure no goal introduces a test runner, harness, or coverage target that the requested change does
+  not itself require, and that goals in a repo with no reachable test setup rely on deterministic
+  manual checks instead.
 - Always include deterministic manual verification steps in addition to commands (human-in-the-loop
   validation requirement).
 - Ensure constraints prevent scope creep.
@@ -315,13 +378,13 @@ truth for the whole skill family; a child may replace individual bracket bodies 
 [Control execution order. (e.g., "Start by fixing TypeErrors in unit tests, then implement the new validation endpoints.")]
 
 🗺️ PLAN:
-[State the general approach explicitly to guide the agent. (e.g., "1. Inspect current routes. 2. Draft tests. 3. Implement Zod parsing. 4. Verify.")]
+[State the general approach explicitly to guide the agent. Where tests exist, keep test steps limited to the behavior this goal changes. (e.g., "1. Inspect current routes. 2. Extend auth.test.ts with cases for the new validation. 3. Implement Zod parsing. 4. Verify.")]
 
 🛑 DONE WHEN:
-[Define a binary, observable outcome. (e.g., "All 5 unit tests in auth.test.ts pass and the linter exits cleanly with 0 errors.")]
+[Define a binary, observable outcome, stated over the tests that cover this change rather than the whole suite. (e.g., "The 5 unit tests in auth.test.ts pass and the linter exits cleanly with 0 errors.")]
 
 🔍 VERIFY:
-[Make the agent run specific commands and deterministic manual checks to prove success. (e.g., "Run `npm run test` and paste the raw output into the session transcript.")]
+[Make the agent run specific commands and deterministic manual checks to prove success, each narrowed to this goal's change per the Test Scoping Policy; a whole-repository run appears only with its stated cross-cutting or no-filtering reason. Omit test commands entirely when the repo has no reachable test setup, and rely on the manual checks. (e.g., "Run `npm test -- src/auth/login.test.ts` and paste the raw output into the session transcript.")]
 
 ✅ COMMIT:
 Mandatory final action after verification passes: run `git commit -m "<calculated S-##### or D-##### message>"`.
@@ -377,6 +440,14 @@ A valid output must satisfy all:
 - Dependencies are explicit and acyclic.
 - Parallelizable goals are marked and safe to execute concurrently.
 - Verification includes runnable commands when available and deterministic manual checks when needed.
+- Every test command in a goal satisfies the Test Scoping Policy: it names a confirmed script and path,
+  is narrowed to that goal's change, and any whole-repository invocation states its cross-cutting or
+  no-filtering reason.
+- No goal adds a test runner, harness, fixture framework, CI wiring, or coverage target that the
+  requested change does not itself require; goals in a repo with no reachable test setup verify through
+  deterministic manual checks and say so in CONTEXT.
+- Tests a goal writes or edits cover only the behavior that goal changes, and extend the nearest
+  existing test file rather than introducing a parallel one.
 - Every user-provided description, acceptance criterion, and code reference used in a goal was
   validated against current code with the strongest available navigation/inspection tool, and any
   mismatch is explicitly corrected in goal context.
@@ -391,13 +462,14 @@ A valid output must satisfy all:
 - Goals subfolder naming convention includes the same `S-#####` or `D-#####` asset ID.
 - `00` is used only by the index file, and the index file name includes the same `S-#####` or
   `D-#####` asset ID.
-- Folder contains one index, one log stub, one `pr-description.md` stub, and one file per goal. Variants
-  may add their own artifacts on top of that (for example the agility payload JSONs) — this bullet is a
-  minimum, not a prohibition.
+- Folder contains one index, one log stub, one file per goal, and — only when the user asked for a PR
+  description — one `pr-description.md` stub. Variants may add their own artifacts on top of that (for
+  example the agility payload JSONs) — this bullet is a minimum, not a prohibition.
 - Every goal includes a `📝 LOG:` section with the shared log file path and required entry format.
-- The last goal in the ordered sequence includes, in its own PLAN/DONE WHEN/VERIFY, the requirement to
-  finalize `pr-description.md` per the `pr-description` skill, gated on every other goal's shared-log
-  entry being terminal.
+- The PR description question was asked and its answer acted on: when requested, the last goal in the
+  ordered sequence includes, in its own PLAN/DONE WHEN/VERIFY, the requirement to finalize
+  `pr-description.md` per the `pr-description` skill, gated on every other goal's shared-log entry being
+  terminal; when declined, no goal mentions it, no stub exists, and the index records the decision.
 - No goal artifact (goal file, index, log, or `pr-description.md` stub) contains a skills-relative
   path such as `../pr-description/SKILL.md` — those resolve only from inside the skills folder, not
   from `.goals/`. Skill references in artifacts are by skill name.
@@ -418,12 +490,12 @@ Default artifact structure:
   - `.goals/D-#####-<feature-slug>/02-D-#####-*.md`
 - Continue the same sequence pattern for each additional goal file.
 
-Every variant additionally produces:
+Every variant additionally produces, **only when the user asked for a PR description**:
 
 - `.goals/<asset-id>-<feature-slug>/pr-description.md` — stub created at planning time (step 6),
   finalized by the last goal at execution time per the PR Description Requirement above and the
   `pr-description` skill (this file may cite it as `../pr-description/SKILL.md`; the stub and goal
-  files may not).
+  files may not). Absent by design when the user declined.
 
 Children that produce extra artifacts declare them in their own Output Contract section, additive to
 this list.
@@ -455,7 +527,11 @@ The Quality Bar is authoritative; this checklist is the final operator pass befo
 - [ ] `00-S-#####-index.md` or `00-D-#####-index.md` created with dependency order.
 - [ ] `log.<asset-id>-<feature-slug>.md` stub created in the goals folder.
 - [ ] Each goal includes a `📝 LOG:` section with the correct shared log file path.
-- [ ] `pr-description.md` stub created in the goals folder; the last goal's file includes the
-  requirement to finalize it once every other goal's shared-log entry is terminal, referencing the
-  `pr-description` skill by name rather than by a skills-relative path.
+- [ ] Test-setup presence was checked; every test command is confirmed and scoped to its goal's change,
+  new test cases cover only that change, and no goal introduces test infrastructure the change does not
+  require.
+- [ ] PR description asked about. If wanted: `pr-description.md` stub created in the goals folder and
+  the last goal's file includes the requirement to finalize it once every other goal's shared-log entry
+  is terminal, referencing the `pr-description` skill by name rather than by a skills-relative path. If
+  declined: no stub, no goal references it, and the index records the decision.
 - [ ] User receives concise summary and next-step options.

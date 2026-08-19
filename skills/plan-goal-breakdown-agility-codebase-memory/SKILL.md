@@ -114,7 +114,7 @@ Keep the base template structure exactly; replace only these bracket bodies:
   materialization of both the goal and its mirrored Task payload.
 - `🧠 CONTEXT:` → `[State the Agility requirement plus the codebase-memory project, concrete graph findings, and source provenance for this goal. Name the symbols/modules/routes and caller/callee or dependency relationship that constrain the change.]`
 - `🗺️ PLAN:` → `[Begin with concrete codebase-memory MCP actions. For each action, name the project, symbol/module/path target, tool, expected result, and decision it unlocks. Only then list narrow edits in MCP-identified files.]`
-- `🔍 VERIFY:` → `[Re-run a concrete MCP relationship check for the exact graph entities changed or affected, then state runnable commands and deterministic manual QE checks.]`
+- `🔍 VERIFY:` → `[Re-run a concrete MCP relationship check for the exact graph entities changed or affected, then state runnable commands and deterministic manual QE checks, each scoped to this goal's change per the base Test Scoping Policy.]`
 
 ## Additional Decision Rules
 

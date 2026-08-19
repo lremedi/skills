@@ -105,9 +105,11 @@ exactly as written:
   🗺️ PLAN, 🛑 DONE WHEN, 🔍 VERIFY, ✅ COMMIT, 🛡️ SAFETY NET, 📝 LOG, 🔗 DEPENDENCIES.
 - **`log.<asset-id>-<feature-slug>.md`** — the shared file every goal appends one entry to on completion
   or block.
-- **`pr-description.md`** — a planning-time stub. The one exception to "read-only input": the last goal
-  in the sequence finalizes this file as part of its own PLAN/DONE WHEN/VERIFY (see PR Description
-  Handoff below). No other goal touches it.
+- **`pr-description.md`** — an optional planning-time stub, present only when the goal set was planned
+  with a PR description. When it exists it is the one exception to "read-only input": the last goal in
+  the sequence finalizes it as part of its own PLAN/DONE WHEN/VERIFY (see PR Description Handoff below).
+  No other goal touches it. Its absence is a deliberate planning decision, not a missing file to
+  create.
 
 Treat the labels, not the emoji, as the contract — a plain-text variant means the same thing. What each
 section obligates you to do:
@@ -172,11 +174,13 @@ than hiding it.
   stop the whole session and ask what to do next; report it and continue with what's still runnable,
   then give the full picture in the final report once truly nothing eligible remains.
 
-## PR Description Handoff (Required)
+## PR Description Handoff (Required When Present)
 
-The last goal in a goal set produced by the `plan-goal-breakdown` family carries one extra deliverable:
-finalize `pr-description.md` in the goals folder. That goal names the **`pr-description` skill** as the
-authority on structure and evidence rules — it does not, and must not, carry a path to that skill,
+A PR description is optional at planning time, so the last goal of a `plan-goal-breakdown` goal set may
+carry one extra deliverable: finalize `pr-description.md` in the goals folder. If no goal's
+PLAN/DONE WHEN/VERIFY calls for it, there is nothing to hand off — do not create the file, do not load
+the skill, and do not treat the missing stub as a defect. When a goal does call for it, that goal names
+the **`pr-description` skill** as the authority on structure and evidence rules — it does not, and must not, carry a path to that skill,
 because a path written from inside `.goals/` can't reach the skills folder.
 
 Resolving it is this skill's job, not the goal file's:
@@ -230,6 +234,13 @@ Resolving it is this skill's job, not the goal file's:
    - Verification is not optional and not skimmable. Run every command VERIFY lists — tests,
      typecheck, lint, architecture checks — and read the real output. Reason explicitly through any
      "manual QE" description you can't literally click through rather than skipping it.
+   - Run those commands as written and stop there. VERIFY's test scope was deliberately narrowed to this
+     goal's change at planning time, so do not widen a filtered test invocation into a whole-repository
+     run, and do not add suites, coverage runs, or new test files the goal did not ask for. A failure
+     outside this goal's scope is information for the log and SAFETY NET, not new work to take on.
+   - If a test command VERIFY names does not exist — missing script, moved test path, no test setup at
+     all — treat it as drift: say so, fall back to the goal's deterministic manual checks, and record it
+     in the log entry's Notes. Do not stand up a runner or invent a substitute suite to fill the gap.
    - If verification fails, go to SAFETY NET. Use exactly the attempt budget and inspection order it
      states, no more. Exhausting it means the goal is ❌ blocked (or ⚠️ partial if some of it
      demonstrably landed) — not something to keep improvising against.
@@ -277,6 +288,9 @@ A valid execution run must satisfy all:
 - Every goal actually eligible to run (dependencies satisfied, not already ✅ done) reached a terminal
   outcome — done, partial, or blocked — without a mid-run pause to ask whether to continue.
 - Every VERIFY command was actually run, with real output read, not inferred.
+- No VERIFY test invocation was widened beyond what the goal wrote, and no test suite, coverage run,
+  test file, or runner was added that the goal did not ask for; a VERIFY command that no longer exists
+  was reported and logged as drift rather than substituted.
 - Every completed goal's commit used exactly its COMMIT section's message, with a recorded hash.
 - Every attempted goal — done, partial, or blocked — has exactly one new LOG entry in the shared log
   file the goal names.
@@ -310,7 +324,8 @@ The Quality Bar is authoritative; this checklist is the final operator pass befo
 - [ ] Shared log read first; already-✅-done goals skipped, ⚠️/❌/missing ones treated as pending.
 - [ ] Run order built from each goal's DEPENDENCIES, not just index numbering.
 - [ ] Every eligible goal executed section-by-section: context confirmed, constraints respected, every
-  VERIFY command actually run, commit run verbatim only after verification passed.
+  VERIFY command actually run as written — not widened, not supplemented with extra suites — and commit
+  run verbatim only after verification passed.
 - [ ] Every attempted goal has exactly one new shared-log entry, in the exact required format.
 - [ ] Any goal calling for `pr-description.md` loaded `../pr-description/SKILL.md` from this skill's
   directory first, and wrote the file from shared-log evidence.
