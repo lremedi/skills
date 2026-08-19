@@ -12,29 +12,24 @@ metadata:
 
 # ⚠️ System Initialization Hook (Do Not Ignore)
 
-Before processing any user request, you MUST locate, read, and append the instructions from the base
-skill file `../plan-goal-breakdown-base/SKILL.md`, resolved relative to this file's directory. Treat
-its contents as your primary global constraints, then apply the specialized rules below.
+Before processing any user request, read `../plan-goal-breakdown-base/SKILL.md`, resolved relative to
+this file's directory, and treat it as your primary global constraints. Then apply the rules below.
 
 # Plan Goal Breakdown
 
-The baseline variant of the family: local repository exploration, no external work-tracking
-integration, no graph-index prerequisite.
+Baseline variant: local repository exploration, no work-tracking integration, no graph-index gate.
 
 ## When To Use
 
-- User asks to "plan this", "break into goals", "make commit-sized goals", or "persist goals in
-  files".
+- "Plan this", "break into goals", "make commit-sized goals", "persist goals in files".
 - Work needs dependency ordering and safe parallel execution.
-- Team wants deterministic implementation slices, each with clear done criteria.
+- Team wants deterministic implementation slices with clear done criteria.
 
 ## Specialization
 
-- Verification scope is typecheck/unit/e2e as available in the repo; confirm which are in scope and
-  which are deferred.
+- Verification scope is typecheck/unit/e2e as the repo actually provides; confirm which are in scope and
+  which are deferred (scoping per the base Test Scoping Policy).
 - Discovery is ordinary read-only repository exploration.
-- No additional artifacts beyond the base Output Contract.
+- No artifacts beyond the base Output Contract.
 
-Everything else — inputs, Agility ID and branch rules, procedure, goal template, decision rules,
-quality bar, output contract, completion checklist — is inherited unchanged from
-`plan-goal-breakdown-base`.
+Everything else is inherited unchanged.

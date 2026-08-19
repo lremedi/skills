@@ -19,84 +19,59 @@ metadata:
 
 # ⚠️ System Initialization Hook (Do Not Ignore)
 
-Before processing any user request, you MUST locate, read, and append the instructions from BOTH
-parent skill files, resolved relative to this file's directory:
+Before processing any user request, read both, resolved relative to this file's directory, and treat them
+as your primary global constraints (on overlap, follow the base's precedence order):
 
-1. `../execute-goals-base/SKILL.md` — the execution contract.
-2. `../codebase-memory/SKILL.md` — the knowledge-graph tool reference.
-
-Treat their contents as your primary global constraints, then apply the specialized rules below.
-Where they overlap, follow the precedence order in the base skill's Inheritance Contract.
+1. `../execute-goals-base/SKILL.md` — execution contract.
+2. `../codebase-memory/SKILL.md` — knowledge-graph tool reference.
 
 # Execute Goals (Codebase Memory)
 
-Same execution contract as the base, with codebase-memory MCP driving context re-confirmation and
-verification re-checks instead of grep-first exploration.
+Base execution contract, with codebase-memory MCP driving context re-confirmation and verification
+re-checks instead of grep-first exploration.
 
 ## When To Use
 
-- The goal set's CONTEXT/PLAN/VERIFY sections already cite codebase-memory tools or a codebase-memory
-  project.
-- Team wants execution-time drift checks (has the code moved since the goal was written?) done via the
-  knowledge graph rather than ad hoc search.
+- The goal set's CONTEXT/PLAN/VERIFY already cite codebase-memory tools or a project.
+- Team wants execution-time drift checks (has the code moved since the goal was written?) via the graph
+  rather than ad hoc search.
 
 ## Code Navigation Policy (Required)
 
-- Use codebase-memory MCP as the primary way to re-confirm a goal's CONTEXT claims and to re-check the
-  relationships named in VERIFY.
-- Tool selection, call syntax, workflows, and gotchas come from the inherited `codebase-memory` skill —
-  use its Quick Decision Matrix and Exploration/Tracing Workflows rather than restating tool signatures
-  here.
-- Text search (`search_code` or Grep) is for narrow confirmation only, after graph-driven discovery —
-  not the first move.
+- codebase-memory MCP is the primary way to re-confirm CONTEXT claims and re-check VERIFY relationships.
+- Tool selection, syntax, workflows, and gotchas come from the inherited `codebase-memory` skill — use its
+  Quick Decision Matrix and workflows rather than restating signatures.
+- Text search (`search_code` or Grep) is narrow confirmation after graph discovery, never the first move.
 
 ## Index Prerequisite (Hard Gate)
 
-Before executing any goal:
-
-1. Check indexed projects with `list_projects`.
-2. Validate project status with `index_status` when needed.
-3. If the target codebase is not indexed or the index is incomplete/failed: halt, ask the user to index
-   the repository first (suggested action: `index_repository`), and continue only after they confirm.
-
-Do not silently fall back to grep-based discovery when the index is missing.
+Before executing any goal: `list_projects`, then `index_status` when needed. Not indexed, or
+incomplete/failed → halt, ask the user to index (`index_repository`), continue only after they confirm.
+Never fall back to grep-based discovery.
 
 ## Procedure Overrides
 
-Base **step 4 (Run each eligible goal)** keeps every bullet it already has. Apply these bullet-level
-changes:
+Base **step 4** keeps every bullet, plus:
 
-- **Replace** the bullet "Do the CONTEXT-confirmation part of the plan before editing anything..."
-  with: "Re-confirm every CONTEXT claim and named symbol/module/route via codebase-memory MCP
-  (`search_graph`, `get_code_snippet`, `trace_path`, `get_architecture` as applicable) before editing
-  anything. If a claim no longer matches what the graph shows, treat that as drift and flag it before
-  continuing — the goal was written against a snapshot of the code that may have moved."
-- **Prepend** to the VERIFY bullet: "Before running the goal's listed VERIFY commands, re-run at least
-  one codebase-memory relationship check (for example `trace_path` between the caller/callee pair the
-  goal names) to confirm the dependency shape VERIFY assumes still holds. Run this in addition to, not
-  instead of, the goal's own VERIFY commands."
+- **Replace** the CONTEXT-confirmation bullet with: "Re-confirm every CONTEXT claim and named
+  symbol/module/route via codebase-memory MCP (`search_graph`, `get_code_snippet`, `trace_path`,
+  `get_architecture` as applicable) before editing anything. A claim the graph no longer supports is
+  drift — flag it before continuing."
+- **Prepend** to the VERIFY bullet: "Re-run at least one codebase-memory relationship check (e.g.
+  `trace_path` between the caller/callee pair the goal names) to confirm the dependency shape VERIFY
+  assumes still holds — in addition to, not instead of, the goal's own VERIFY commands."
 
 ## Additional Decision Rules
 
-- Supersedes the base Autonomy Contract bullet beginning "Only three things legitimately interrupt a
-  run": a missing or unhealthy codebase-memory index is a fourth legitimate interrupt.
-- If the codebase-memory index is missing or unhealthy for the target project, halt and ask the user to
-  index before executing any goal in the set.
-- If graph-based re-confirmation contradicts a goal's CONTEXT, stop and flag the drift rather than
-  editing against a claim the graph no longer supports.
+- Supersedes the base Autonomy Contract bullet "Only three things legitimately interrupt a run": a
+  missing or unhealthy index is a fourth legitimate interrupt — halt and ask the user to index.
+- Graph re-confirmation contradicting a goal's CONTEXT → stop and flag the drift rather than editing
+  against an unsupported claim.
 
 ## Additional Quality Bar
 
-Beyond the base bar:
-
-- Every executed goal's CONTEXT claims were re-confirmed via codebase-memory MCP before editing.
-- Every executed goal's VERIFY pass includes at least one graph-based relationship re-check, named
-  explicitly (project, tool, entities checked).
-- If the project wasn't indexed, execution halted and the user was asked to index first.
-
-## Additional Completion Checklist
-
-- [ ] Codebase-memory project identified and index status verified before executing any goal.
-- [ ] Each executed goal's CONTEXT was re-confirmed via codebase-memory MCP, with any drift flagged.
-- [ ] Each executed goal's VERIFY includes a named graph-based relationship re-check.
-- [ ] If indexing was missing/unhealthy, the user was asked to index before execution continued.
+- The project was identified and its index status verified before any goal ran; if it wasn't indexed,
+  execution halted and the user was asked to index first.
+- Every executed goal's CONTEXT claims were re-confirmed via MCP before editing, with drift flagged.
+- Every executed goal's VERIFY pass includes a named graph relationship re-check (project, tool,
+  entities).
