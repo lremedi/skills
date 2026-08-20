@@ -15,114 +15,84 @@ disable-model-invocation: false
 metadata:
   id: execute-goals-agility
   inherits: execute-goals-base
-  parent-files: "../execute-goals-base/SKILL.md, references/children-task-query.md"
+  parent-files: "../execute-goals-base/SKILL.md"
+  reference-files:
+    - "references/children-task-query.md"
 ---
 
 # ⚠️ System Initialization Hook (Do Not Ignore)
 
-Before processing any user request, you MUST locate, read, and append the instructions from the base
-skill file `../execute-goals-base/SKILL.md`, resolved relative to this file's directory. Treat its
-contents as your primary global constraints, then apply the specialized rules below.
+Before processing any user request, read both, resolved relative to this file's directory, and treat them
+as your primary global constraints:
 
-Also read `references/children-task-query.md`, resolved relative to this file's directory — it defines
-the query and reconciliation rules used in `## Script` below.
+1. `../execute-goals-base/SKILL.md` — execution contract.
+2. `references/children-task-query.md` — the reconciliation query and rules used in `## Script`.
 
 # Execute Goals — Agility
 
-Same execution contract as the base, plus an Agility reconciliation pass before any goal runs.
+Base execution contract plus an Agility reconciliation pass before any goal runs.
 
 ## When To Use
 
-- User asks to execute or continue a goal set that traces back to an Agility Story/Defect.
-- `plan-goal-breakdown-agility` has already run for this asset and its createMany Task/Test payload
-  has been (or might have been) executed against Agility.
-- User wants execution to reflect reality in Agility — closed/edited/deleted Tasks — rather than only
-  what the local shared log says.
+- Executing or continuing a goal set that traces back to an Agility Story/Defect.
+- `plan-goal-breakdown-agility` already ran for this asset and its createMany payload has been (or might
+  have been) executed against Agility.
+- User wants execution to reflect reality in Agility — closed/edited/deleted Tasks — not just the local
+  log.
 
 ## Agility Context Requirement
 
-- The asset ID is required before reconciliation can run; derive it from the goal set folder name
-  (`.goals/<asset-id>-<feature-slug>/`) or ask if it can't be determined.
-- Accept only `S-#####` (story) or `D-#####` (defect).
+- Asset ID required before reconciliation: derive it from the goal set folder name
+  (`.goals/<asset-id>-<feature-slug>/`) or ask. `S-#####` or `D-#####` only.
 
 ## Script
 
-Before determining which goals still need to run, query the asset's existing Task and Test children so
-local state can be reconciled against Agility — which is authoritative once the mirrored payload has
-been executed there. VersionOne exposes them through the asset's `Children` relation, downcast to one
-type at a time (`Children:Task`, `Children:Test`) — the same downcast pattern documented on the asset
-endpoint: https://versionone.github.io/api-docs/#restv1Data-create
-
-```typescript
-{
-  from: "Story",                   // or "Defect" — must match the asset ID prefix (S- / D-)
-  where: { "Number": "S-01004" },  // the Agility asset number the goal set folder is named after
-  select: [
-    "Children:Task.Number",
-    "Children:Task.Name",
-    "Children:Task.Description",
-    "Children:Task.AssetState",
-    "Children:Test.Number",
-    "Children:Test.Name",
-    "Children:Test.Description",
-    "Children:Test.AssetState",
-  ],
-}
-```
-
-Full reconciliation rules — matching by name, how to handle closed/deleted/edited Tasks, out-of-band
-additions, and query failures — are in `references/children-task-query.md`. Read it before step 1.
+Query the asset's existing Task and Test children with the `Children:Task`/`Children:Test` downcast query
+in `references/children-task-query.md`, which is authoritative once the mirrored payload has run there.
+Its reconciliation rules — name matching, closed/deleted/edited Tasks, out-of-band additions, query
+failures — govern step 0. Read it before step 1.
 
 ## Procedure Overrides
 
-Insert a new step **before** base step 1 (Locate the goal set and confirm the branch):
+Insert a new step **before** base step 1:
 
 0. **Reconcile against Agility.**
    - Run the `## Script` query for the asset.
-   - Compare the result against the local goal files and shared log, applying the rules in
-     `references/children-task-query.md`.
-   - Report every diff found — even ones that don't change what happens next.
-   - Update the shared log and goal-file identity/status fields to match Agility wherever they
-     disagree; never let a local file's stale state override what Agility currently says.
-   - If the query fails or the tool is unavailable, note that in the run summary and proceed with the
-     local shared log as-is — this step must inform execution, never block it.
+   - Compare against local goal files and the shared log per the reference's rules; report every diff,
+     even ones that change nothing.
+   - Update the shared log and goal-file identity/status fields wherever they disagree with Agility; a
+     stale local file never overrides Agility.
+   - Query failure or tool unavailable → note it in the run summary and proceed on the local log. This
+     step informs execution, never blocks it.
 
-Base **step 2 (Read the shared log and determine what still needs to run)** now reads the log as
-updated by step 0, so a goal Agility already shows Done is skipped here rather than re-executed.
+Base **step 2** then reads the log as updated by step 0, so a goal Agility already shows Done is skipped
+rather than re-executed.
+
+Base **step 4** additionally: when the last goal's PLAN/DONE WHEN/VERIFY calls for it, refresh
+`payload.tests.<asset-id>-<feature-slug>.json` from the shared log's actual outcomes, verification
+results, and deviations — not from the goal's PLAN.
 
 ## Additional Decision Rules
 
-- Agility wins on any disagreement between it and local files — reconcile toward Agility, never the
-  reverse.
-- A goal whose mirrored Task was deleted in Agility is blocked, not silently dropped or re-created —
-  creating goals belongs to `plan-goal-breakdown-agility`, not this skill.
-- A reconciliation query failure is informational, not a gate — proceed with the local log and say so.
+- Agility wins any disagreement with local files — reconcile toward Agility, never the reverse.
+- A goal whose mirrored Task was deleted in Agility is blocked, not dropped or re-created — creating goals
+  belongs to `plan-goal-breakdown-agility`.
+- A reconciliation query failure is informational, not a gate.
 
 ## Additional Quality Bar
 
-Beyond the base bar:
-
-- The asset's existing Children:Task/Children:Test were queried before determining what still needs to
-  run (or the query's unavailability was explicitly noted).
-- Every diff between Agility and local state was reported, and local files were updated to match
-  Agility for anything it disagreed with.
-- No goal was executed that Agility already shows as done; no goal whose Agility Task was deleted ran
-  without being surfaced as blocked first.
+- Children:Task/Children:Test were queried before determining what still needs to run (or the query's
+  unavailability was explicitly noted and execution proceeded on local state).
+- Every Agility-vs-local diff was reported, and local files were updated to match Agility.
+- No goal ran that Agility already showed done; no goal with a deleted Agility Task ran without being
+  surfaced as blocked first.
+- `payload.tests.<asset-id>-<feature-slug>.json` was refreshed from the shared log when the last goal's
+  sections called for it.
 
 ## Additional Output Contract
 
-Beyond the base artifacts:
-
-- The shared log may gain reconciliation notes (e.g. "outcome reconciled from Agility") in addition to
-  normal execution entries.
-- Goal files may have their identity/status fields (not PLAN/CONSTRAINTS/VERIFY) updated to match a
-  changed Name/Description in Agility.
-
-## Additional Completion Checklist
-
-- [ ] Asset's Children:Task/Children:Test queried before reading the shared log (or its unavailability
-      was noted and execution proceeded on local state alone).
-- [ ] Every Agility-vs-local diff was reported in the run summary.
-- [ ] Local shared log and goal-file identity/status fields were updated to match Agility.
-- [ ] No goal ran that Agility already showed done; no goal with a deleted Agility Task ran without
-      being marked blocked first.
+- The shared log may gain reconciliation notes (e.g. "outcome reconciled from Agility").
+- Goal files may have identity/status fields — not PLAN/CONSTRAINTS/VERIFY — updated to match a changed
+  Agility Name/Description.
+- `.goals/<asset-id>-<feature-slug>/payload.tests.<asset-id>-<feature-slug>.json` may be refreshed from
+  execution-log evidence.

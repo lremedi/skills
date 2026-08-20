@@ -1,6 +1,6 @@
 ---
 name: plan-goal-breakdown-base
-description: "Abstract base for the plan-goal-breakdown skill family. Defines the shared contract for decomposing work into dependency-aware, commit-sized goal files: Agility asset ID rules, working-branch policy (protected-branch hard stop, otherwise confirm), the canonical goal template, the shared execution log, naming conventions, quality bar, and completion checklist."
+description: "Abstract base for the plan-goal-breakdown skill family. Shared contract for decomposing work into dependency-aware, commit-sized goal files: Agility asset ID rules, working-branch policy, the canonical goal template, the shared execution log, test scoping, naming conventions, and the quality bar."
 user-invocable: false
 disable-model-invocation: true
 metadata:
@@ -13,411 +13,340 @@ metadata:
 
 # Plan Goal Breakdown — Base
 
-Abstract base skill. Not directly invocable: `user-invocable: false` hides it from the `/` menu and
-`disable-model-invocation: true` stops the agent from auto-loading it. It is only ever reached by a
-child reading this file.
+Abstract base: `user-invocable: false` + `disable-model-invocation: true`, reached only by a child
+reading this file. Children layer specialization on top; everything here binds every child that does
+not declare an override.
 
-Child skills inherit this file and layer their own specialization on top. Everything below is a
-global constraint for every child unless that child explicitly declares an override.
-
-Create execution-ready goal files from a broad task, with explicit dependencies, parallelism, and
+Job: turn a broad task into execution-ready goal files with explicit dependencies, parallelism, and
 verification criteria.
 
 ## Inheritance Contract
 
-Inheritance is not a native frontmatter feature — VS Code accepts only `name`, `description`,
-`license`, `compatibility`, `metadata`, `argument-hint`, `user-invocable`,
-`disable-model-invocation`, and `context` in a skill file. So it is expressed in two parts:
+Frontmatter has no inheritance key, so inheritance is declared in `metadata` and enforced by the
+child's `# ⚠️ System Initialization Hook`, which reads every declared path before handling the request.
+Keep both in sync:
 
-- **Declared** in the supported free-form `metadata` map, for humans and tooling to read:
-  ```yaml
-  metadata:
-    id: plan-goal-breakdown-codebase-memory
-    inherits: "plan-goal-breakdown-base, codebase-memory"
-    parent-files: "../plan-goal-breakdown-base/SKILL.md, ../codebase-memory/SKILL.md"
-  ```
-- **Enforced** by the child's `# ⚠️ System Initialization Hook` section, which instructs the agent to
-  read every path in `metadata.parent-files` before processing any user request. The hook is the
-  actual mechanism; `metadata` is only the declaration. Keep the two in sync — if you add a parent,
-  add it to both.
+```yaml
+metadata:
+  inherits: "plan-goal-breakdown-base, codebase-memory"        # parents, most general first
+  parent-files: "../plan-goal-breakdown-base/SKILL.md, ../codebase-memory/SKILL.md"
+  reference-files: ["references/mcp-evidence-contract.md"]     # shared docs, not parents
+```
 
-Rules:
-
-- Children list parents most general first, and must read every parent they list.
-- Children may **add** sections (new policies, new artifacts, new procedure steps).
-- Children may **override** a section only by naming it explicitly under one of the canonical
-  extension-point headings below. Silent divergence is not allowed.
-
-Canonical extension-point headings — use these exact names so a reader can diff any two children:
+- Children add sections freely; they change base behavior only under a canonical heading below.
+- An override is the smallest possible delta and never restates inherited text: quote the base bullet,
+  then say prepend / replace / drop. Base text copied verbatim into a child is a bug — it forks
+  silently the moment the base changes.
 
 | Heading | Purpose |
 |---|---|
-| `## Specialization` | one-paragraph statement of what this variant changes |
-| `## Additional Inputs To Collect` | extra inputs, numbered continuing from the base list |
+| `## When To Use` | invocation scope |
+| `## Specialization` | one paragraph on what this variant changes |
+| `## Additional Inputs To Collect` | extra inputs, numbered on from the base list |
 | `## Procedure Overrides` | bullet-level deltas to the base procedure |
 | `## Goal Template Overrides` | replacement bracket bodies, structure unchanged |
 | `## Additional Decision Rules` | extra rules, plus any base rule explicitly superseded |
 | `## Additional Quality Bar` | extra pass/fail criteria |
 | `## Additional Output Contract` | extra artifacts |
-| `## Additional Completion Checklist` | extra operator checks |
+| `## Code Navigation Policy` | codebase-memory navigation and search restrictions |
+| `## Index Prerequisite` | codebase-memory indexing hard gate |
+| `## Agility Context Requirement` | Agility asset context and validation |
+| `## Goal Authoring Policy` | codebase-memory goal-authoring requirements |
+| `## Test Scoping Policy` | test detection, run scoping, test-authoring limits |
+| `## Script` | executable reconciliation or integration procedure |
 
-Anything a child declares outside these headings is a new policy of its own, not an override.
-- An override must be the **smallest possible delta, and must never restate inherited text.** Quote
-  the base bullet or section being changed and say prepend / replace / drop — do not re-type a whole
-  procedure step to alter one bullet of it. Any line copied verbatim from this base into a child is a
-  bug: it silently forks the moment the base changes, and re-typing a step tends to drop the bullets
-  you did not mean to touch.
+Anything outside these headings is a new policy, not an override.
 
-Precedence, highest first:
+Precedence: child override → this base (process and output contract) → other parents, authoritative
+only in their own domain (`codebase-memory` owns graph tool syntax, never the goal-file contract).
+Conflict with no declared override: base wins.
 
-1. A child's explicitly declared override.
-2. This base — authoritative for process and output contract: inputs, asset ID and branch rules,
-   procedure, goal template, naming conventions, quality bar, completion checklist.
-3. Any additional parent — authoritative only within its own domain. `codebase-memory` is the
-   authority for knowledge-graph tool names, call syntax, workflows, and gotchas; it never changes
-   the goal-file contract above.
+This family has no completion checklist. The Quality Bar is the single gate — never add a second list
+restating it.
 
-Where a child's rule conflicts with this base and no override is declared, this base wins.
+## Output Discipline (Required)
+
+Applies to your own messages and to every line written into an artifact.
+
+- Answer first. No preamble, no recap, no "now I will…" narration, no restating the plan back.
+- Show, don't explain: a command, a path, a template line, a diff. Prose only where a rule cannot be
+  shown.
+- State each rule once. A sentence restating its neighbor gets cut.
+- Goal-file bracket bodies are instructions: one imperative sentence plus one concrete example.
+- Produce only what was asked for — no extra goals, summary docs, README edits, or migration notes
+  nobody requested.
 
 ## Inputs To Collect
 
-Agility is the team work-tracking system where assets are identified as story IDs (`S-#####`) or
-defect IDs (`D-#####`).
+Agility is the work-tracking system; assets are stories (`S-#####`) or defects (`D-#####`).
 
-1. Objective: single-sentence target outcome.
-2. Scope boundaries: what is in-scope vs out-of-scope.
-3. Execution policy: commit-sized goals sized by task complexity (no fixed goal count; apply
-   sizing/merge-split rules from Decision Rules).
-4. Dependency policy: required interdependency format (`depends_on`, `enables`, parallelizable
-   units).
-5. Existing assets: goal templates and existing goals in repo.
-6. Agility asset ID: required story or defect number for artifact naming and commit prefixes.
-7. Working branch: confirmation of which branch the work lands on. Preserve whatever name it already
-   has; see Working Branch Requirement.
+1. Objective: one sentence.
+2. Scope: in-scope vs out-of-scope.
+3. Execution policy: commit-sized goals, count driven by complexity (see Decision Rules).
+4. Dependency policy: `Depends on` / `Enables` / `Parallel`.
+5. Existing assets: goal templates and goals already in the repo.
+6. Agility asset ID — required (see Agility ID Requirement).
+7. Working branch (see Working Branch Requirement).
+8. PR description: wanted or not — ask, never assume (see PR Description Requirement).
 
-If these are incomplete, ask concise clarifying questions before writing files.
+Incomplete inputs → ask concise clarifying questions before writing files.
 
 ## Agility ID Requirement
 
-- Always request the Agility asset number before materializing goals.
-- Accept only `S-#####` (story) or `D-#####` (defect) format.
-
-The asset ID is required for **goal folder, goal filenames, index filename, log filename, and commit
-message prefixes**. Those are artifacts this skill creates, so it controls their naming completely.
+Request the asset number before materializing anything; accept only `S-#####` or `D-#####`. It drives
+the goal folder, goal filenames, index filename, log filename, and commit prefixes — artifacts this
+skill owns outright.
 
 ## Working Branch Requirement
 
-The branch is different: its name is often outside the user's control (shared feature branch,
-vendor/integration branch, a branch someone else created). Branch naming is therefore a
-**recommendation**, not a gate. Only working on a protected branch is a hard stop.
+Branch names are often outside the user's control, so naming is a recommendation; only a protected
+branch is a hard stop.
 
-1. Determine the current branch. If the workspace is not a git repository, or HEAD is detached, do
-   not guess: ask the user where the work should land and treat their answer as the working branch.
+1. Determine the current branch. Not a git repo, or detached HEAD → ask where the work lands and use
+   that answer.
+2. **Hard stop — protected trunk.** Halt and ask for a working branch if the current branch is, case
+   insensitively, `main`, `master`, `trunk`, `default`, `develop`, `development`, `dev`, `release`,
+   `release/*`, `hotfix/*`, `support/*`, or anything the user or repo config calls protected.
+   Recommended new name: `<asset-id>-<feature-slug>` (e.g. `S-12345-chat-fallback`).
+3. **Otherwise confirm, don't halt.** Branch name already carries the asset ID → that is the
+   confirmation, continue. Otherwise state the name, note the missing asset ID, ask proceed-or-switch,
+   and accept "proceed" with the name unchanged — a non-conforming name is not a defect. Never rename a
+   branch yourself.
+4. Record the **actual** branch name in the index and every goal's `Branch:` slot. Never synthesize an
+   idealized name, and never let the branch name affect the asset ID used in folders, filenames, or
+   commit prefixes.
 
-2. **Hard stop — protected branch.** If the current branch is a shared/protected trunk, do not plan
-   work onto it. Halt and ask the user to create or switch to a working branch first. Treat as
-   protected, case-insensitively:
+## PR Description Requirement (Optional — Ask First)
 
-   - `main`, `master`, `trunk`, `default`
-   - `develop`, `development`, `dev`
-   - `release`, `release/*`, `hotfix/*`, `support/*`
-   - any branch the user or repo config identifies as protected
+Ask once, while collecting inputs, whether this goal set should produce a `pr-description.md`:
 
-   Recommended name for the new branch: `<asset-id>-<feature-slug>`, for example
-   `S-12345-chat-fallback` or `D-67890-chat-fallback`.
+- **No**, or no answer available (non-interactive run) → skip everything below: no stub, no deliverable
+  on the last goal, no related quality-bar item. Record the decision in the index so a rerun neither
+  re-asks nor silently re-adds it, and state the assumption in your summary. The `pr-description` skill
+  can still be run directly against the finished branch later, so declining costs nothing.
+- **Yes** → the rest of this section applies.
 
-3. **Otherwise — confirm, do not halt.** On any non-protected branch, ask the user once to confirm
-   this is where they want the work to land, then proceed. Never rename the branch yourself.
-   - If the branch name already contains the same asset ID: treat that as confirmation and continue
-     without asking.
-   - If it does not: state the branch name, note that it does not carry the asset ID, and ask whether
-     to proceed here or switch. Accept "proceed" and continue with the name unchanged — a
-     non-conforming name is not a defect.
+Read `../pr-description/SKILL.md` (relative to this file) before materializing the final goal file. It
+owns structure and evidence rules; this base only decides when and which goal produces one.
 
-4. Record the **actual** branch name in each goal's branch metadata. Never synthesize an idealized
-   `<asset-id>-<feature-slug>` value that does not match the real branch, and never let the branch
-   name change the asset ID used for folders, filenames, or commit prefixes — those come from the
-   asset ID alone and are unaffected by a non-conforming branch.
+**Inside goal artifacts, reference it by skill name, never by that path.** Skills-relative paths resolve
+only from the skills folder; from `.goals/` the same string points at a nonexistent
+`.goals/pr-description/SKILL.md`. This holds for every skills-relative path: goal artifacts carry skill
+names or repo-root-relative paths only.
 
-## PR Description Requirement (Required)
+- The **last goal in the ordered sequence, and only that goal**, gains one deliverable: finalize
+  `pr-description.md` in the same subfolder once every other goal's shared-log entry is **terminal**
+  (`✅ done`, `⚠️ partial`, or `❌ blocked` — all three end a run and all three satisfy the gate; the
+  `pr-description` skill already requires disclosing partial and blocked goals).
+- Put it in that goal's own PLAN (final step), DONE WHEN (binary: the file exists, follows the required
+  structure, and its "What changed" / "How to verify" come from the shared log's entries, not from this
+  goal's PLAN), and VERIFY (confirm every other entry is terminal first).
+- No new template section — it lives inside that goal's existing sections.
+- At planning time it can only be stubbed (step 6); the last goal finishes it at execution time.
 
-Before materializing the final goal file — the highest-numbered goal in the ordered sequence — read
-`../pr-description/SKILL.md`, resolved relative to this file's directory. It defines the exact
-structure and evidence rules for a PR description; this base only decides *when* and *which* goal
-produces one, not what it should contain.
+## Test Scoping Policy (Required)
 
-- The **last goal in the ordered sequence, and only that goal**, gets an added deliverable: finalize
-  `pr-description.md` in the same subfolder, following `../pr-description/SKILL.md`'s required
-  structure, once every other goal in the set has a terminal (✅ done or ❌ blocked) shared-log entry.
-- Add this as the final step of that goal's own PLAN, and as an added binary criterion in its DONE
-  WHEN: `pr-description.md` exists, follows the required structure, and its "What changed" / "How to
-  verify" content is drawn from the shared log's actual entries — not restated from this one goal's
-  PLAN in isolation.
-- Add a corresponding VERIFY check to that goal: confirm every other goal's shared-log entry is
-  terminal before treating `pr-description.md` as complete. A PR description written while sibling
-  goals are still pending is incomplete by construction, not a draft to refine later.
-- This does not change the Goal Template's structure. The added deliverable lives inside that one
-  goal's own PLAN/DONE WHEN/VERIFY content, the same way any other task-specific detail does — no new
-  template section is introduced.
-- At materialization time, the description can only be scaffolded, not finished — no other goal has
-  executed yet. Create the stub in step 6 below; the last goal finishes it later, at execution time.
+Tests prove *this goal's change*, not the repository's health. Applies whenever PLAN, DONE WHEN, or
+VERIFY touches tests.
+
+1. **Detect before prescribing.** In step 1, establish whether a usable test setup exists: a runner in
+   the manifest (`package.json` scripts, `pytest.ini`/`pyproject.toml`, `go test`, test `*.csproj`,
+   Gradle/Maven surefire, …) *and* tests covering or adjacent to the touched code. Record the finding in
+   CONTEXT.
+   - Available → affected tests go in VERIFY, scoped per rules 2–4.
+   - None reachable → do not invent one. No new runner, harness, fixture framework, or CI wiring unless
+     the requested change itself needs it. Use deterministic manual checks and say so in CONTEXT.
+2. **Scope the run.** Name the narrowest invocation covering the change:
+   `npm test -- src/auth/login.test.ts`, `pytest tests/auth/test_login.py::test_rejects_expired`,
+   `go test ./internal/auth/...`, `dotnet test --filter FullyQualifiedName~LoginTests`. Whole-repo runs
+   (`npm test`, `pytest`, `go test ./...`) only when the change is genuinely cross-cutting (shared
+   contract, build config, dependency bump, wide rename) or the runner cannot filter — and the goal must
+   name which reason applies.
+3. **Scope the tests you write.** Cover the behavior this goal adds, fixes, or breaks, nothing more.
+   Extend the nearest existing test file in its existing style. No coverage backfill for untouched code,
+   no coverage-percentage targets, no restructuring existing tests unless the goal is itself a
+   test-refactor goal.
+4. **Verification stays in its goal.** Goal N covers its own change plus regressions it could plausibly
+   cause in the same module. Full regression, e2e sweeps, and perf runs belong to an explicit later goal
+   when warranted — not appended to every VERIFY.
+5. **Never name an unconfirmed command.** Script names come from the manifest you read, test paths from
+   files you found. An unconfirmed test command is an unresolved claim (step 1) and cannot be
+   materialized.
 
 ## Procedure
 
 1. Discover context.
 
-- Inspect branch/workspace changes relevant to the requested plan.
-- Treat every user-provided description, acceptance criterion, file path, symbol, architecture claim,
-  and code reference as an unverified hypothesis until checked against the current repository. Use the
-  strongest available read-only repository, language-service, or agent-provided navigation tool; do
-  not use a supplied reference as proof that it is current or accurate.
-- Record each material claim as confirmed, corrected, or unresolved. Do not materialize a goal from
-  an unresolved claim: take the smallest additional read that can resolve it, or ask the user for
-  clarification when the code cannot decide.
-- Check the current branch against the protected list; halt if protected (see Working Branch
-  Requirement).
-- Confirm the working branch with the user unless its name already carries the asset ID.
+- Inspect branch/workspace changes relevant to the plan.
+- Treat every supplied description, acceptance criterion, path, symbol, architecture claim, and code
+  reference as an unverified hypothesis until checked against the current repo with the strongest
+  available read-only navigation tool. A supplied reference is never its own proof.
+- Record each material claim as confirmed, corrected, or unresolved. Never materialize a goal from an
+  unresolved claim: take the smallest read that resolves it, or ask.
+- Check the branch against the protected list; halt if protected. Confirm the branch unless its name
+  carries the asset ID.
 - Identify current architecture touchpoints and likely files affected.
 - Find existing planning docs or goals to avoid duplication.
 
-2. Extract decision points.
+2. Extract decision points: primary and fallback strategy, configuration source-of-truth and runtime
+   behavior, verification scope and what is deferred.
 
-- Decide primary strategy and fallback strategy.
-- Confirm configuration source-of-truth and runtime behavior.
-- Confirm verification scope and what is deferred.
+3. Decompose into goals: variable count driven by complexity, never a fixed number; each independently
+   executable and reviewable; each focused on one concern (contract, plumbing, logic, resiliency, tests,
+   rollout).
 
-3. Decompose into goals.
+4. Define dependencies and parallelism: `Depends on`, `Enables`, `Parallel` as plain-text fields at the
+   bottom of each goal file, using those exact labels. Build a strict order and mark parallel branches.
 
-- Produce a variable number of commit-sized goals based on task complexity.
-- Never force a fixed goal count.
-- Each goal must be independently executable and reviewable.
-- Keep each goal focused on one concern (contract, plumbing, logic, resiliency, tests, rollout).
+5. Materialize goal files under a new `.goals/<asset-id>-<feature-slug>/`, one file per goal from the
+   template below, named `<sequence>-<asset-id>-<goal-slug>.md`.
 
-4. Define dependencies and parallelism.
+- Calculate one single-line commit message per goal: `S-##### <concise action>` /
+  `D-##### <concise action>`. Mandatory, not advisory; no `Co-authored-by` or other co-author trailer.
+  The goal commits it as its final action after implementation and verification pass, and is not done
+  until the commit succeeds and its hash is in the shared log.
+- Record the confirmed branch, exactly as named, as goal metadata.
+- Conventions: apply filename naming during generation; `00` is reserved for the index and its filename
+  carries the same asset ID; stop and request correction if artifact naming or commit prefixes are
+  violated (branch naming is exempt — it is confirmed, never enforced); reruns update artifacts in
+  place, idempotently.
+- Template sections: GOAL, CONTEXT, CONSTRAINTS, PRIORITY, PLAN, DONE WHEN, VERIFY, COMMIT, SAFETY NET,
+  LOG, DEPENDENCIES.
 
-- For each goal specify:
-  - `Depends on`
-  - `Enables`
-  - `Parallel`
-- Build a strict order and identify parallel branches.
+6. Create the plan index `00-<asset-id>-index.md` carrying: the confirmed branch exactly as named
+   (required — the execute-goals family reads it from here), ordered execution list, dependency graph,
+   parallelization notes, and one line recording whether a PR description is planned.
 
-Dependency metadata default format:
-
-- Keep dependency metadata in plain text fields at the bottom of each goal file.
-- Use consistent labels (`Depends on`, `Enables`, `Parallel`) for easy human scanning.
-
-5. Materialize goal files.
-
-- Create a new subfolder under `.goals/<asset-id>-<feature-slug>/`.
-- Save one file per goal using the goal template below.
-- Prepend the Agility asset ID to each goal filename:
-  - `<sequence>-S-#####-<goal-slug>.md`
-  - `<sequence>-D-#####-<goal-slug>.md`
-- Calculate one single-line commit message per goal with this format:
-  - `S-##### <concise action>`
-  - `D-##### <concise action>`
-- Include the calculated message in the goal and execute `git commit -m "<calculated message>"` as
-  the final action after all implementation and verification steps pass.
-- The commit message is mandatory, not advisory. Do not add a `Co-authored-by` trailer or any other
-  co-author attribution.
-- Do not mark the goal done until the commit succeeds and its commit hash is recorded in the shared
-  log entry.
-- Include the confirmed working branch as required goal metadata for each goal, recorded exactly as
-  the branch is actually named.
-- Convention enforcement:
-  - Apply the goal filename convention during generation.
-  - `00` is reserved for the index file only, and the `00` index filename must include the same
-    Agility asset ID.
-  - Enforce strict validation on artifact naming and commit prefixes: if those conventions are
-    violated, stop and request correction before continuing. Branch naming is excluded — it is
-    confirmed with the user, never enforced.
-  - Enforce idempotently when re-running the skill (update generated artifacts in place, no
-    duplicated naming text).
-- Goal template sections: GOAL, CONTEXT, CONSTRAINTS, PRIORITY, PLAN, DONE WHEN, VERIFY,
-  SAFETY NET, LOG, DEPENDENCIES.
-
-6. Create plan index.
-
-- Add `00-S-#####-index.md` or `00-D-#####-index.md` with:
-  - ordered execution list
-  - dependency graph
-  - parallelization notes
-- Create `log.<asset-id>-<feature-slug>.md` stub in the same subfolder (skip if it already exists):
+- Create the log stub (skip if present):
   ```markdown
   # Execution Log: <asset-id>-<feature-slug>
 
   <!-- Each goal appends one entry here on completion or block. -->
   ```
-- Create `pr-description.md` stub in the same subfolder (skip if it already exists):
+- Create the PR description stub **only if the user asked for one** (skip if present):
   ```markdown
   # PR Description — <asset-id>-<feature-slug>
 
   <!-- Finalized by the last goal in this set, once every other goal's shared-log entry is terminal.
-       Structure and evidence rules: ../pr-description/SKILL.md -->
+       Structure and evidence rules: the `pr-description` skill. -->
   ```
 
-7. Validate quality.
-
-- Ensure no missing dependency links.
-- Ensure each goal has binary done criteria and verification steps.
-- Ensure every supplied description and code reference used by a goal is represented in its context
-  as confirmed evidence or as an explicit correction; no goal may silently preserve a disproven or
-  unresolved claim.
-- Inspect `package.json` or the equivalent manifest and include runnable verification commands when
-  available.
-- Always include deterministic manual verification steps in addition to commands (human-in-the-loop
-  validation requirement).
-- Ensure constraints prevent scope creep.
+7. Validate against the Quality Bar before returning. In particular: read the manifest for runnable
+   commands, confirm every script and test path exists, and pair commands with deterministic manual
+   checks (human-in-the-loop is required, not optional).
 
 ## Goal Template (Required)
 
-Use this exact template structure for every goal file. This template is the canonical source of
-truth for the whole skill family; a child may replace individual bracket bodies only via a declared
-`## Goal Template Overrides` section, never the structure.
+Canonical for the whole family. A child may replace individual bracket bodies via a declared
+`## Goal Template Overrides`, never the structure.
 
 ```markdown
 🎯 GOAL:
-[State the exact, single-sentence objective. (e.g., "Rewrite the user login module to enforce Zod validation.") ]
+[One sentence, exact objective. (e.g., "Rewrite the user login module to enforce Zod validation.")]
 
 🧠 CONTEXT:
-[Provide necessary background plus a validation ledger for every material supplied claim or code reference used by this goal. State the current-code evidence/tool that confirms it, the corrected fact when it differs, or `unresolved` and why planning stopped. (e.g., "The request named auth_v1.ts; current-code navigation confirmed it owns basic password matching.")]
+[Background plus a validation ledger for every material supplied claim or code reference: the current-code evidence/tool confirming it, the corrected fact when it differs, or `unresolved` and why planning stopped. (e.g., "Request named auth_v1.ts; navigation confirmed it owns basic password matching.")]
 
 📏 CONSTRAINTS:
-[List hard scope boundaries. (e.g., "Do not alter the database schema. Only modify backend routes. Stick to Typescript.") ]
+[Hard scope boundaries. (e.g., "Do not alter the database schema. Backend routes only. TypeScript only.")]
 
 📊 PRIORITY:
-[Control execution order. (e.g., "Start by fixing TypeErrors in unit tests, then implement the new validation endpoints.")]
+[Execution order inside this goal. (e.g., "Fix TypeErrors in unit tests first, then add the validation endpoints.")]
 
 🗺️ PLAN:
-[State the general approach explicitly to guide the agent. (e.g., "1. Inspect current routes. 2. Draft tests. 3. Implement Zod parsing. 4. Verify.")]
+[Numbered approach; test steps cover only what this goal changes. (e.g., "1. Inspect current routes. 2. Extend auth.test.ts for the new validation. 3. Implement Zod parsing. 4. Verify.")]
 
 🛑 DONE WHEN:
-[Define a binary, observable outcome. (e.g., "All 5 unit tests in auth.test.ts pass and the linter exits cleanly with 0 errors.")]
+[Binary, observable outcome, stated over the tests covering this change — not the whole suite. (e.g., "The 5 tests in auth.test.ts pass and the linter exits 0.")]
 
 🔍 VERIFY:
-[Make the agent run specific commands and deterministic manual checks to prove success. (e.g., "Run `npm run test` and paste the raw output into the session transcript.")]
+[Exact commands plus deterministic manual checks, each narrowed per Test Scoping Policy; a whole-repo run carries its stated reason; omit test commands entirely when no test setup exists. (e.g., "Run `npm test -- src/auth/login.test.ts` and paste the raw output into the transcript.")]
 
 ✅ COMMIT:
-Mandatory final action after verification passes: run `git commit -m "<calculated S-##### or D-##### message>"`.
-Use exactly the calculated single-line message. Do not add `Co-authored-by` or any other co-author
-attribution. Record the resulting commit hash in the shared log entry. If the commit fails, do not
-mark this goal complete.
+Mandatory final action after verification passes: `git commit -m "<calculated S-##### or D-##### message>"`,
+using exactly the calculated single-line message, with no co-author attribution. Record the hash in the
+shared log entry. If the commit fails, this goal is not complete.
 
 🛡️ SAFETY NET:
-[State what to do on failure. (e.g., "If errors happen 3 times in a row, halt and request human intervention rather than retrying.")]
+[Failure path and attempt budget. (e.g., "After 3 consecutive failures, halt and request human intervention.")]
 
 📝 LOG:
-Mandatory: when this goal is completed or blocked, append exactly one entry to
-`.goals/<asset-id>-<feature-slug>/log.<asset-id>-<feature-slug>.md` before finishing.
-Do not skip, defer, or write the entry in any other file.
-
-Entry format:
+Mandatory on completion or block, before finishing: append exactly one entry to
+`.goals/<asset-id>-<feature-slug>/log.<asset-id>-<feature-slug>.md`. Never skip it, defer it, or write
+it elsewhere.
 
 ## <goal-slug> — <YYYY-MM-DD>
 
 - **Outcome**: ✅ done | ⚠️ partial | ❌ blocked
 - **Files changed**: <list>
 - **Commit**: <commit hash or "N/A — not committed">
-- **Verify result**: <paste key command output or "N/A">
-- **Notes**: <deviations from plan, blockers, anything surprising>
+- **Verify result**: <key command output or "N/A">
+- **Notes**: <deviations, blockers, surprises>
 
 🔗 DEPENDENCIES:
-Depends on: [List prerequisite goal IDs or `none`]
-Enables: [List downstream goal IDs or `none`]
-Parallel: [List parallelizable goal IDs or `none`]
+Branch: [Actual confirmed branch name, exactly as named]
+Depends on: [Prerequisite goal IDs or `none`]
+Enables: [Downstream goal IDs or `none`]
+Parallel: [Parallelizable goal IDs or `none`]
 ```
+
+`Branch:` is where the branch metadata lives. A child may replace its bracket body, never remove or
+relocate the line.
 
 ## Decision Rules
 
-- If architecture is unclear: run read-only exploration first, then draft.
-- If user asks for existing settings/mechanisms: reuse current system; do not invent parallel config
-  paths.
-- If a goal is too large for one cohesive commit: split it.
-- If multiple tiny goals would always ship together: merge them.
-- If goals are too coarse: split until each can map to one coherent commit.
-- If goals are too granular: merge related low-risk steps.
-- If regenerating goals: re-apply goal filename naming convention idempotently.
+- Architecture unclear → read-only exploration first, then draft.
+- User points at existing settings/mechanisms → reuse them; never invent a parallel config path.
+- Goal too large for one cohesive commit, or too coarse → split until each maps to one commit.
+- Tiny goals that would always ship together, or over-granular steps → merge.
+- Regenerating → re-apply the filename convention idempotently.
 
 ## Quality Bar
 
-A valid output must satisfy all:
+The single gate. A valid output satisfies all:
 
-- Every goal is commit-sized and testable.
-- Dependencies are explicit and acyclic.
-- Parallelizable goals are marked and safe to execute concurrently.
-- Verification includes runnable commands when available and deterministic manual checks when needed.
-- Every user-provided description, acceptance criterion, and code reference used in a goal was
-  validated against current code with the strongest available navigation/inspection tool, and any
-  mismatch is explicitly corrected in goal context.
-- Every goal includes a calculated, single-line commit message prefixed with `S-#####` or
-  `D-#####`.
-- Every completed goal ends with a successful `git commit` using exactly its calculated message,
-  with no co-author attribution, and records its commit hash in the shared log.
-- Every goal includes branch metadata naming the actual confirmed working branch, whether or not that
-  name carries the asset ID.
-- The working branch is not a protected trunk.
-- Goal filename naming convention is enforced by the skill itself and remains idempotent on reruns.
-- Goals subfolder naming convention includes the same `S-#####` or `D-#####` asset ID.
-- `00` is used only by the index file, and the index file name includes the same `S-#####` or
-  `D-#####` asset ID.
-- Folder contains one index, one log stub, plus one file per goal.
-- Every goal includes a `📝 LOG:` section with the shared log file path and required entry format.
-- The last goal in the ordered sequence includes, in its own PLAN/DONE WHEN/VERIFY, the requirement to
-  finalize `pr-description.md` per `../pr-description/SKILL.md`, gated on every other goal's
-  shared-log entry being terminal.
+- Every goal is commit-sized, testable, independently reviewable, with binary DONE WHEN criteria and
+  verification steps.
+- Dependencies are explicit and acyclic; parallel goals are marked and safe to run concurrently.
+- Verification pairs runnable commands (when available) with deterministic manual checks.
+- Every test command names a confirmed script and path, is scoped to that goal's change, and states its
+  reason if it is a whole-repo run; no goal adds a runner, harness, fixture framework, CI wiring, or
+  coverage target the change does not require; authored tests cover only the changed behavior and extend
+  the nearest existing test file.
+- Every supplied description, acceptance criterion, and code reference used by a goal was validated
+  against current code with the strongest available tool, and any mismatch is corrected in CONTEXT. No
+  goal preserves a disproven or unresolved claim.
+- Every goal carries a calculated single-line commit message prefixed `S-#####`/`D-#####`, and ends with
+  a successful commit using exactly that message, no co-author attribution, hash recorded in the log.
+- Every goal's `🔗 DEPENDENCIES:` `Branch:` slot names the real branch, matching the index; the branch is
+  not a protected trunk.
+- Naming: goal filenames follow the convention and stay idempotent across reruns; the goals subfolder
+  and the `00` index filename carry the same asset ID; `00` is used by nothing else.
+- The folder holds one index, one log stub, one file per goal, plus a `pr-description.md` stub only if
+  the user asked for one. Variants may add artifacts (e.g. agility payload JSONs).
+- Every goal has a `📝 LOG:` section with the shared log path and required entry format.
+- The PR description answer was acted on: requested → the last goal's PLAN/DONE WHEN/VERIFY require
+  finalizing `pr-description.md` per the `pr-description` skill, gated on every other entry being
+  terminal; declined → no stub, no goal mentions it, index records the decision.
+- No goal artifact contains a skills-relative path (`../pr-description/SKILL.md` and the like) — skill
+  references in artifacts are by skill name.
+- Each goal's constraints actively prevent scope creep, and the user gets a concise summary with
+  next-step options.
 
 ## Output Contract
 
-Default artifact structure:
+```
+.goals/<asset-id>-<feature-slug>/           # asset-id is S-##### or D-#####
+  00-<asset-id>-index.md
+  log.<asset-id>-<feature-slug>.md
+  01-<asset-id>-<goal-slug>.md
+  02-<asset-id>-<goal-slug>.md              # continue the sequence per goal
+  pr-description.md                         # only when the user asked for one
+```
 
-- Story variant:
-  - `.goals/S-#####-<feature-slug>/00-S-#####-index.md`
-  - `.goals/S-#####-<feature-slug>/log.S-#####-<feature-slug>.md`
-  - `.goals/S-#####-<feature-slug>/01-S-#####-*.md`
-  - `.goals/S-#####-<feature-slug>/02-S-#####-*.md`
-- Defect variant:
-  - `.goals/D-#####-<feature-slug>/00-D-#####-index.md`
-  - `.goals/D-#####-<feature-slug>/log.D-#####-<feature-slug>.md`
-  - `.goals/D-#####-<feature-slug>/01-D-#####-*.md`
-  - `.goals/D-#####-<feature-slug>/02-D-#####-*.md`
-- Continue the same sequence pattern for each additional goal file.
+`pr-description.md` is stubbed at planning time (step 6) and finalized by the last goal at execution
+time per the PR Description Requirement (this file may cite `../pr-description/SKILL.md`; artifacts may
+not). Absent by design when declined.
 
-Every variant additionally produces:
-
-- `.goals/<asset-id>-<feature-slug>/pr-description.md` — stub created at planning time (step 6),
-  finalized by the last goal at execution time per the PR Description Requirement above and
-  `../pr-description/SKILL.md`.
-
-Children that produce extra artifacts declare them in their own Output Contract section, additive to
-this list.
-
-Goal naming convention:
-
-- Prefix with zero-padded sequence for deterministic execution order.
-- Prefix the goal slug with the Agility asset ID (`S-#####` or `D-#####`).
-- Use concise slug names describing implementation intent.
-
-## Completion Checklist
-
-The Quality Bar is authoritative; this checklist is the final operator pass before returning output.
-
-- [ ] Clarifications resolved or documented assumptions made.
-- [ ] Every material supplied description and code reference was verified against current code with
-  the strongest available tool; discrepancies are corrected in goal context and unresolved
-  claims were clarified before materializing goals.
-- [ ] Agility asset ID captured in `S-#####` or `D-#####` format.
-- [ ] Current branch checked against the protected list; halted if protected.
-- [ ] Working branch confirmed with the user (or auto-confirmed because its name carries the asset
-      ID), and its name left unchanged.
-- [ ] Each goal includes branch metadata with the real branch name and a calculated single-line
-  commit message.
-- [ ] Each completed goal has a successful final commit using its calculated message, no co-author
-  attribution, and the recorded commit hash in the shared log.
-- [ ] Goal filename naming convention applied idempotently.
-- [ ] Goals persisted to `.goals/<asset-id>-<feature-slug>/`.
-- [ ] `00-S-#####-index.md` or `00-D-#####-index.md` created with dependency order.
-- [ ] `log.<asset-id>-<feature-slug>.md` stub created in the goals folder.
-- [ ] Each goal includes a `📝 LOG:` section with the correct shared log file path.
-- [ ] `pr-description.md` stub created in the goals folder; the last goal's file includes the
-  requirement to finalize it once every other goal's shared-log entry is terminal.
-- [ ] User receives concise summary and next-step options.
+Naming: zero-padded sequence prefix for deterministic order, then the asset ID, then a concise slug
+describing implementation intent. Children declare extra artifacts in their own Output Contract.

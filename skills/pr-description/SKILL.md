@@ -18,93 +18,81 @@ metadata:
 
 # PR Description
 
-Two ways this gets used: someone asks for it directly against a branch or diff, or a
-`plan-goal-breakdown` goal set's final goal calls for it once every goal in the set has landed. Either
-way, the job is the same — turn a set of real commits into a description a reviewer can act on without
-re-deriving the diff themselves.
+Invoked directly against a branch or diff, or by a `plan-goal-breakdown` goal set's final goal once every
+other goal has landed. Either way: turn real commits into a description a reviewer can act on without
+re-deriving the diff.
+
+Goal artifacts reference this skill **by name**, never by path — a `.goals/` folder cannot resolve a
+skills-relative path. The `execute-goals` family loads this file from its own location (see its "PR
+Description Handoff"). Keep templates and stubs referencing the skill name.
 
 ## Inputs To Collect
 
-1. What to describe: a branch name / commit range, or a `.goals/<asset-id>-<feature-slug>/` folder.
-   If both a goal set and a branch are available, prefer the goal set — it already carries structured
-   evidence (CONTEXT, CONSTRAINTS, VERIFY, and the shared log's actual outcomes) that a raw diff
-   doesn't.
-2. The base branch the PR will open against, if it isn't obvious from the repo's default.
+1. What to describe: a branch/commit range, or a `.goals/<asset-id>-<feature-slug>/` folder. With both
+   available, prefer the goal set — it carries structured evidence (CONTEXT, CONSTRAINTS, VERIFY, and the
+   shared log's actual outcomes) a raw diff doesn't.
+2. The base branch the PR opens against, if not obvious from the repo default.
 
 ## Gathering Evidence
 
-- **From a goal set (preferred when available).** Read the index file for the overview and dependency
-  graph, read every goal file for GOAL/CONTEXT/CONSTRAINTS/VERIFY, and read the shared log for what
-  actually happened — files changed, commit hashes, verify results, notes. The log is ground truth; a
-  goal's PLAN was the intent, the log entry is what landed. Where they disagree, the log wins.
-- **From a branch/commit range (no goal set).** Inspect the real commit log and the diff against the
-  base branch. Don't describe intent you can't see in the diff — if a commit message claims something
-  the diff doesn't show, note the discrepancy instead of repeating the claim.
-- Either way, treat every claim the way the breakdown/execution skills do: confirmed by something you
-  actually read (a log entry, a diff, a commit), never assumed from a title or ticket text alone.
+- **From a goal set (preferred).** Index for the overview and dependency graph, every goal file for
+  GOAL/CONTEXT/CONSTRAINTS/VERIFY, and the shared log for what actually happened — files changed, commit
+  hashes, verify results, notes. PLAN was intent; the log is ground truth. Where they disagree, the log
+  wins.
+- **From a branch/commit range.** Read the real commit log and the diff against the base branch. Never
+  describe intent the diff doesn't show — a commit message claiming more than the diff delivers is a
+  discrepancy to note, not a claim to repeat.
+- Either way: every statement traces to something you read (log entry, diff, commit), never to a title or
+  ticket text.
 
 ## Required Structure
 
-Use this template. Every section is required or explicitly omitted per Decision Rules — keep prose
-tight rather than padding it; reviewers skim.
+Every section is required or explicitly omitted per Decision Rules. Reviewers skim — keep it tight.
 
 ```markdown
 ## <asset-id or branch> — <concise title>
 
 ### Summary
-2-4 sentences, plain language: what problem existed, what this changes, and why now. A reviewer who
-never saw the ticket should understand the motivation from this paragraph alone.
+2-4 sentences, plain language: what problem existed, what this changes, why now. A reviewer who never saw
+the ticket should get the motivation from this paragraph alone.
 
 ### What changed
-Prose, not a changelog — name the exact files, functions, routes, or components touched and the
-mechanism of the change. "AttachmentListQueryService now filters the picker's candidate list to eight
-supported content types before it reaches the bridge," not "updated attachment filtering." Group by
-concern (contract, plumbing, tests) rather than listing files in isolation if there were several.
+Prose, not a changelog — name the exact files, functions, routes, or components touched and the mechanism.
+"AttachmentListQueryService now filters the picker's candidate list to eight supported content types before
+it reaches the bridge," not "updated attachment filtering." Group by concern (contract, plumbing, tests)
+rather than listing files in isolation.
 
 ### Why this approach
-Only the decisions that weren't obvious: a rejected alternative, a constraint that shaped the design, a
-tradeoff a reviewer would otherwise question. Omit this section entirely if nothing here isn't already
-self-evident from "What changed."
+Only non-obvious decisions: a rejected alternative, a constraint that shaped the design, a tradeoff a
+reviewer would question. Omit if it's already self-evident from "What changed."
 
 ### How to verify
-The exact commands a reviewer can run themselves, plus deterministic manual QE steps. Pull these
-directly from each goal's VERIFY section when working from a goal set, or reconstruct them from the
-repo's actual test/lint scripts when working from a bare diff. Never list a command that wasn't
-actually run.
+The exact commands a reviewer can run, plus deterministic manual QE steps — pulled from each goal's VERIFY
+section, or reconstructed from the repo's actual test/lint scripts for a bare diff. Scoped to what this
+change touches: the specific test files or filters that were run, never a whole-suite command nobody ran.
+Never list a command that wasn't actually run.
 
 ### Risk / rollback
-Blast radius, feature flags, migration or rollback notes — only if there's something a reviewer needs
-beyond "revert the commit." Omit if there's genuinely nothing here.
+Blast radius, feature flags, migration or rollback notes — only if a reviewer needs more than "revert the
+commit." Omit if there's nothing.
 
 ### Linked work
-Agility asset ID and any mirrored Task/Test links, if applicable. Omit if there's no tracker involved.
+Agility asset ID and any mirrored Task/Test links. Omit if there's no tracker.
 ```
 
 ## Decision Rules
 
-- If a section would just restate the one above it in different words, cut it — don't pad structure
-  for its own sake.
-- When working from a goal set, the shared log's "Notes" fields often already contain the "why" and
-  "risk" content — read them before writing those sections from scratch.
-- If a goal in the set is ⚠️ partial or ❌ blocked, say so plainly in Summary and Risk/rollback. A PR
-  description that smooths over incomplete work is worse than no description.
-- "Technical" and "descriptive" aren't in tension: name the real symbol/file (technical) while still
-  explaining what it's for in a sentence a non-implementer could follow (descriptive). Neither should
-  crowd the other out.
+- A section that restates the one above it in other words gets cut — no padding structure for its own sake,
+  and no section left as a placeholder.
+- From a goal set: the shared log's "Notes" fields usually already hold the "why" and "risk" content — read
+  them before writing those sections from scratch.
+- A ⚠️ partial or ❌ blocked goal is disclosed plainly in Summary and Risk/rollback. A description that
+  smooths over incomplete work is worse than none.
+- "Technical" and "descriptive" aren't in tension: name the real symbol/file, then say what it's for in a
+  sentence a non-implementer follows.
 
 ## Output Contract
 
-- Invoked directly: return the description in the response, and offer to save it as a file if the user
-  wants one.
-- Invoked from a goal set's final goal: write it to
+- Invoked directly → return the description in the response; offer to save it as a file.
+- Invoked from a goal set's final goal → write
   `.goals/<asset-id>-<feature-slug>/pr-description.md`, replacing any planning-time stub.
-
-## Completion Checklist
-
-- [ ] Evidence came from the shared log/goal files (if a goal set exists) or the actual diff/commit
-  log (if not) — never from an unverified title or ticket text alone.
-- [ ] Every required section present, or explicitly omitted per Decision Rules — none left as a
-  placeholder.
-- [ ] "What changed" names real files/functions/mechanisms, not a generic paraphrase.
-- [ ] "How to verify" lists only commands that were actually run or scripts that actually exist.
-- [ ] Any ⚠️ partial or ❌ blocked goal in the set is disclosed, not smoothed over.
